@@ -1,0 +1,132 @@
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:opsz,wght@6..96,400;6..96,500;6..96,600;6..96,700&display=swap');
+
+@import "tailwindcss";
+
+:root {
+  
+
+  --foreground: #50251a;
+  --primary: #ff3838;
+  --soft: #f7d7cc;
+  --card: #f5c7bd;
+  --accent: #b97b65;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+ 
+  color: var(--foreground);
+  font-family: "Merriweather", serif;
+}
+
+
+@keyframes heroZoom {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-heroZoom {
+  animation: heroZoom 18s ease-in-out infinite;
+}
+@keyframes authImageMove {
+  0% {
+    transform: scale(1.05) translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: scale(1.12) translate3d(-8px, -6px, 0);
+  }
+
+  100% {
+    transform: scale(1.05) translate3d(0, 0, 0);
+  }
+}
+
+.auth-image-animation {
+  animation: authImageMove 12s ease-in-out infinite;
+}
+/* ================================
+   HOMEBITE DARK MODE - TEXT
+================================ */
+
+html.dark body {
+  background-color: #120705 !important;
+  color: #fff8f3 !important;
+}
+
+/* Main headings */
+html.dark h1,
+html.dark h2,
+html.dark h3,
+html.dark h4,
+html.dark h5,
+html.dark h6 {
+  color: #fff8f3 !important;
+}
+
+/* Normal paragraph text */
+html.dark p {
+  color: #e6d6cf !important;
+}
+
+/* Muted / secondary text */
+html.dark
+  [class*="text-[#806d66]"],
+html.dark
+  [class*="text-[#8a7871]"],
+html.dark
+  [class*="text-[#897871]"],
+html.dark
+  [class*="text-[#927e76]"],
+html.dark
+  [class*="text-[#927f77]"],
+html.dark
+  [class*="text-[#9a847b]"],
+html.dark
+  [class*="text-[#a09089]"] {
+  color: #bfaea7 !important;
+}
+
+/* Brown text used in light mode */
+html.dark
+  [class*="text-[#2C0E05]"],
+html.dark
+  [class*="text-[#3B241C]"],
+html.dark
+  [class*="text-[#5F5A57]"],
+html.dark
+  [class*="text-[#6B4A40]"] {
+  color: #fff8f3 !important;
+}
+
+/* Tailwind gray text */
+html.dark .text-gray-500,
+html.dark .text-gray-600,
+html.dark .text-gray-700,
+html.dark .text-gray-800,
+html.dark .text-gray-900 {
+  color: #e6d6cf !important;
+}
+
+/* Gold accent stays visible */
+html.dark
+  [class*="text-[#B08A55]"] {
+  color: #d6a76a !important;
+}
