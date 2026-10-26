@@ -1,3 +1,4 @@
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 async function sendAuthRequest(endpoint, formData) {
@@ -30,10 +31,9 @@ export async function loginUser(formData) {
   }
 
   localStorage.setItem("homebite-token", data.token);
+  localStorage.setItem("homebite-user", JSON.stringify(data.user));
 
   window.dispatchEvent(new Event("homebite-auth-changed"));
-  
-  localStorage.setItem("homebite-user", JSON.stringify(data.user));
 
   return data;
 }

@@ -20,11 +20,44 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+const [user, setUser] = useState(null);
+const isLoggedIn = Boolean(user);
+
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 const [cartCount, setCartCount] = useState(0);
 
   const pathname = usePathname();
+
+
+  
+  // ===== AUTHENTICATION =====
+  useEffect(() => {
+    const updateAuth = () => {
+      const savedUser = localStorage.getItem("homebite-user");
+      const token = localStorage.getItem("homebite-token");
+
+      if (savedUser && token) {
+        try {
+          setUser(JSON.parse(savedUser));
+        } catch {
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
+    };
+
+    updateAuth();
+
+    window.addEventListener("homebite-auth-changed", updateAuth);
+    window.addEventListener("storage", updateAuth);
+
+    return () => {
+      window.removeEventListener("homebite-auth-changed", updateAuth);
+      window.removeEventListener("storage", updateAuth);
+    };
+  }, []);
+
 
   // ===== CART COUNT =====
 useEffect(() => {
@@ -94,6 +127,19 @@ useEffect(() => {
     { name: "Contact", href: "/contact" },
     { name: "Dashboard", href: "/dashboard" },
   ];
+
+
+  
+function handleLogout() {
+  localStorage.removeItem("homebite-token");
+  localStorage.removeItem("homebite-user");
+
+  setUser(null);
+  setIsProfileOpen(false);
+
+  window.dispatchEvent(new Event("homebite-auth-changed"));
+}
+
 
   return (
     <>
@@ -238,11 +284,13 @@ useEffect(() => {
                         background: gradient,
                       }}
                     >
-                      N
+                     {(user?.name || user?.email || "U")
+  .charAt(0)
+  .toUpperCase()}
                     </div>
 
                     <span className="hidden sm:block text-sm font-medium text-gray-700 dark:text-gray-200">
-                      Nishat
+                     {user?.name || user?.email?.split("@")[0] || "User"}
                     </span>
                   </button>
 
@@ -267,7 +315,7 @@ useEffect(() => {
                       </Link>
 
                       <button
-                        onClick={() => setIsLoggedIn(false)}
+                        onClick={handleLogout}
                         className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
                       >
                         <FiLogOut size={15} />
