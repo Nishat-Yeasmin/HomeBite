@@ -1,9 +1,9 @@
 
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
+
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import LayoutShell from "./components/LayoutShell";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,11 +33,7 @@ export default function RootLayout({ children }) {
         <GoogleOAuthProvider
           clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
         >
-          <Navbar />
-
-          <main>{children}</main>
-
-          <Footer />
+         <LayoutShell>{children}</LayoutShell>
         </GoogleOAuthProvider>
       </body>
     </html>
