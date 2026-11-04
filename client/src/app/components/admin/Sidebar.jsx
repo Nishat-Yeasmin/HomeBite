@@ -100,10 +100,17 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
         {/* This section alone scrolls */}
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-5 [scrollbar-color:#9A7967_#2A1009] [scrollbar-width:thin]">
           <div className="flex items-center gap-3 px-3 py-5">
-            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-[#C38B54] bg-[#4A2618] font-serif text-xl font-bold">
-              A
-              <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#2A1009] bg-emerald-400" />
-            </div>
+           <div className="relative h-12 w-12 shrink-0">
+  <div className="h-full w-full overflow-hidden rounded-full border-2 border-[#C38B54] bg-[#4A2618]">
+    <img
+      src="/images/admin-profile.jpg"
+      alt="Admin Profile"
+      className="h-full w-full object-cover"
+    />
+  </div>
+
+  <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#2A1009] bg-emerald-400" />
+</div>
             <div className="min-w-0">
               <p className="text-sm font-bold">Admin</p>
               <p className="mt-0.5 text-xs text-[#D5B9A7]">Super Admin</p>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -11,17 +10,22 @@ export default function ApiTestPage() {
   useEffect(() => {
     async function fetchCategories() {
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/categories`
-        );
+        const API_URL =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+        const response = await fetch(`${API_URL}/api/categories`);
+        const data = await response.json();
+
+        console.log("API Status:", response.status);
+        console.log("API Response:", data);
 
         if (!response.ok) {
-          throw new Error("Failed to fetch categories");
+          throw new Error(data.error || data.message || "Failed to fetch categories");
         }
 
-        const data = await response.json();
-        setCategories(data.categories);
+        setCategories(data.categories || []);
       } catch (err) {
+        console.error("Category Fetch Error:", err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -31,13 +35,9 @@ export default function ApiTestPage() {
     fetchCategories();
   }, []);
 
-  if (loading) {
-    return <p>Loading categories...</p>;
-  }
+  if (loading) return <p>Loading categories...</p>;
 
-  if (error) {
-    return <p>Error: {error}</p>;
-  }
+  if (error) return <p>Error: {error}</p>;
 
   return (
     <main style={{ padding: "30px" }}>

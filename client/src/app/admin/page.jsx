@@ -2,105 +2,86 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import Sidebar from "@/app/components/admin/Sidebar";
 import {
-  FiMenu,
-  FiSearch,
-  FiBell,
-  FiChevronDown,
-  FiChevronRight,
-  FiRefreshCw,
-  FiPlus,
-  FiArrowUpRight,
-  FiArrowDownRight,
-  FiCoffee,
+  FiShoppingBag,
+  FiDollarSign,
   FiGrid,
-  FiCheckCircle,
-  FiPackage,
-  FiEye,
-  FiShoppingCart,
-  FiTrendingUp,
-  FiAlertCircle,
+  FiLayers,
+  FiSearch,
+  FiPlus,
+  FiEdit2,
+  FiTrash2,
   FiX,
+  FiImage,
+  FiRefreshCw,
+  FiEye,
 } from "react-icons/fi";
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/$/, "");
+import Sidebar from "@/app/components/admin/Sidebar";
 
-function extractArray(payload, keys = []) {
-  if (Array.isArray(payload)) return payload;
-  for (const key of keys) {
-    if (Array.isArray(payload?.[key])) return payload[key];
-  }
-  return [];
-}
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+).replace(/\/$/, "");
 
-function money(value) {
-  const amount = Number(value);
-  if (!Number.isFinite(amount)) return "৳0";
-  return `৳${amount.toLocaleString("en-BD", { maximumFractionDigits: 2 })}`;
-}
+const money = (value) =>
+  `৳${Number(value || 0).toLocaleString("en-BD", {
+    maximumFractionDigits: 2,
+  })}`;
 
-function getFoodName(food) {
-  return food?.name || food?.food_name || food?.title || food?.foodName || "Untitled food";
-}
+const getImage = (url) => url?.trim() || "/images/food-placeholder.png";
 
-function getFoodCategory(food) {
-  const category = food?.category_name || food?.categoryName || food?.category;
-  if (typeof category === "string") return category;
-  return category?.name || category?.category_name || "Uncategorized";
-}
+const initialFood = {
+  name: "",
+  category_id: "",
+  description: "",
+  price: "",
+  image_url: "",
+  is_available: true,
+};
 
-function getFoodPrice(food) {
-  return food?.price ?? food?.food_price ?? food?.selling_price ?? 0;
-}
+const initialCategory = {
+  name: "",
+  description: "",
+  image_url: "",
+};
 
-function getFoodId(food, index) {
-  return food?.id ?? food?.food_id ?? food?.foodId ?? index + 1;
-}
-
-function getFoodImage(food) {
-  return food?.image_url || food?.image || food?.imageUrl || food?.photo || "";
-}
-
-function getAvailable(food) {
-  const value = food?.is_available ?? food?.available ?? food?.availability ?? food?.status;
-  if (typeof value === "boolean") return value;
-  if (typeof value === "number") return value === 1;
-  if (typeof value === "string") {
-    return ["available", "active", "true", "1", "in stock"].includes(value.toLowerCase());
-  }
-  return true;
-}
-
-function StatCard({ title, value, subtitle, icon: Icon, tone = "amber", trend, down = false }) {
-  const tones = {
-    amber: "border-[#F0E2D0] bg-gradient-to-br from-[#FFF9F0] to-[#FFF4E6] text-[#8B4A25]",
-    green: "border-[#D9EEE0] bg-gradient-to-br from-[#F3FBF5] to-[#EAF7EE] text-[#177245]",
-    coral: "border-[#F5E1D9] bg-gradient-to-br from-[#FFF6F1] to-[#FFF0E8] text-[#A34D2A]",
-    cream: "border-[#F0E5D8] bg-gradient-to-br from-[#FFFCF7] to-[#FFF5E8] text-[#77401F]",
-  };
-  const iconTones = {
-    amber: "bg-[#F9E4CB] text-[#8B4A25]",
-    green: "bg-[#D2F0DC] text-[#167044]",
-    coral: "bg-[#FBD9CC] text-[#A34D2A]",
-    cream: "bg-[#F5E1C2] text-[#77401F]",
-  };
-
+function StatCard({ title, value, icon: Icon, color, subtitle }) {
   return (
-    <div className={`rounded-2xl border p-4 shadow-sm shadow-[#4B2410]/[0.03] sm:p-5 ${tones[tone]}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className={`flex h-11 w-11 items-center justify-center rounded-full ${iconTones[tone]}`}>
-          <Icon className="h-5 w-5" />
+    <div className="group rounded-2xl border border-[#F0E1D8] bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-500">{title}</p>
+          <h2 className="mt-2 text-2xl font-bold text-[#2C0E05]">
+            {value}
+          </h2>
+          <p className="mt-1 text-xs text-gray-400">{subtitle}</p>
         </div>
-        {trend && (
-          <span className={`mt-1 flex items-center gap-1 text-[11px] font-bold ${down ? "text-red-600" : "text-emerald-700"}`}>
-            {down ? <FiArrowDownRight /> : <FiArrowUpRight />} {trend}
-          </span>
-        )}
+
+        <div
+          className={`flex h-12 w-12 items-center justify-center rounded-xl ${color} transition-transform duration-300 group-hover:rotate-6`}
+        >
+          <Icon size={23} />
+        </div>
       </div>
-      <p className="mt-4 text-sm text-[#756B66]">{title}</p>
-      <p className="mt-1 font-serif text-3xl font-bold tracking-tight text-[#2B1710]">{value}</p>
-      <p className="mt-2 text-xs text-[#897A71]">{subtitle}</p>
+    </div>
+  );
+}
+
+function Modal({ title, onClose, children }) {
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <div className="max-h-[90vh] w-full max-w-xl animate-[modalIn_.25s_ease-out] overflow-y-auto rounded-2xl bg-white shadow-2xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white px-6 py-4">
+          <h2 className="text-lg font-bold text-[#2C0E05]">{title}</h2>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-2 text-gray-500 transition hover:bg-[#F3E3DC] hover:text-[#2C0E05]"
+          >
+            <FiX size={20} />
+          </button>
+        </div>
+        <div className="p-6">{children}</div>
+      </div>
     </div>
   );
 }
@@ -109,393 +90,877 @@ export default function AdminDashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [foods, setFoods] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [stats, setStats] = useState({
+    totalOrders: 0,
+    totalEarnings: 0,
+    totalFoods: 0,
+    totalCategories: 0,
+  });
+  const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [showAllFoods, setShowAllFoods] = useState(false);
-  const [noticeOpen, setNoticeOpen] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  const loadDashboard = useCallback(async (quiet = false) => {
-    if (quiet) setRefreshing(true);
-    else setLoading(true);
-    setError("");
+  const [modal, setModal] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [foodForm, setFoodForm] = useState(initialFood);
+  const [categoryForm, setCategoryForm] = useState(initialCategory);
 
-    const results = await Promise.allSettled([
-      fetch(`${API_URL}/api/foods`, { cache: "no-store" }).then(async (res) => {
-        if (!res.ok) throw new Error(`Foods API returned ${res.status}`);
-        return res.json();
-      }),
-      fetch(`${API_URL}/api/categories`, { cache: "no-store" }).then(async (res) => {
-        if (!res.ok) throw new Error(`Categories API returned ${res.status}`);
-        return res.json();
-      }),
-    ]);
+  const [foodSearch, setFoodSearch] = useState("");
 
-    if (results[0].status === "fulfilled") {
-      setFoods(extractArray(results[0].value, ["foods", "data", "results"]));
-    } else {
-      setFoods([]);
-      setError("Food data could not be loaded. Check that your backend is running and GET /api/foods is available.");
+  const showNotice = (message) => {
+    setNotice(message);
+    window.setTimeout(() => setNotice(""), 3500);
+  };
+
+  const loadDashboard = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      const [foodRes, categoryRes, statsRes, salesRes] =
+        await Promise.all([
+          fetch(`${API_URL}/api/foods`),
+          fetch(`${API_URL}/api/categories`),
+          fetch(`${API_URL}/api/admin/stats`),
+          fetch(`${API_URL}/api/admin/sales`),
+        ]);
+
+      if (!foodRes.ok || !categoryRes.ok || !statsRes.ok || !salesRes.ok) {
+        throw new Error("Could not load dashboard data");
+      }
+
+      const [foodData, categoryData, statsData, salesData] =
+        await Promise.all([
+          foodRes.json(),
+          categoryRes.json(),
+          statsRes.json(),
+          salesRes.json(),
+        ]);
+
+      setFoods(foodData.foods || []);
+
+const loadedCategories = categoryData.categories || [];
+setCategories(loadedCategories);
+
+console.log("Loaded categories:", loadedCategories);
+
+      setStats(statsData.stats || {});
+      setSales(salesData.sales || []);
+    } catch (error) {
+      console.error("Dashboard loading error:", error);
+      showNotice("Dashboard data load korte problem hoyeche.");
+    } finally {
+      setLoading(false);
     }
-
-    if (results[1].status === "fulfilled") {
-      setCategories(extractArray(results[1].value, ["categories", "data", "results"]));
-    } else {
-      setCategories([]);
-    }
-
-    setLoading(false);
-    setRefreshing(false);
   }, []);
 
   useEffect(() => {
     loadDashboard();
   }, [loadDashboard]);
 
-  const availableFoods = useMemo(() => foods.filter(getAvailable), [foods]);
-  const unavailableFoods = useMemo(() => foods.filter((food) => !getAvailable(food)), [foods]);
-
   const filteredFoods = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = foodSearch.toLowerCase().trim();
+
     return foods.filter((food) => {
-      const matchesSearch =
-        !query ||
-        getFoodName(food).toLowerCase().includes(query) ||
-        getFoodCategory(food).toLowerCase().includes(query);
-      const matchesStatus =
-        statusFilter === "all" ||
-        (statusFilter === "available" && getAvailable(food)) ||
-        (statusFilter === "unavailable" && !getAvailable(food));
-      return matchesSearch && matchesStatus;
+      return (
+        food.name?.toLowerCase().includes(query) ||
+        food.category_name?.toLowerCase().includes(query)
+      );
     });
-  }, [foods, search, statusFilter]);
+  }, [foods, foodSearch]);
 
-  const visibleFoods = showAllFoods ? filteredFoods : filteredFoods.slice(0, 5);
+  const maxEarning = Math.max(
+    ...sales.map((item) => Number(item.earnings || 0)),
+    1
+  );
 
-  const categoryCards = useMemo(() => {
-    const colors = [
-      "bg-[#FFF4E8] border-[#F5E3D0] text-[#8D4A24]",
-      "bg-[#F0FAF1] border-[#DCEFE0] text-[#287449]",
-      "bg-[#FFF7E8] border-[#F4E8CE] text-[#8D5C1F]",
-      "bg-[#FFF2F3] border-[#F4E0E2] text-[#9D4B5D]",
-      "bg-[#F5F5FB] border-[#E5E5F0] text-[#56527C]",
-      "bg-[#FFF7F1] border-[#F1E4DA] text-[#8A5B40]",
-    ];
-    const iconList = [FiCoffee, FiGrid, FiPackage, FiCheckCircle, FiShoppingCart, FiTrendingUp];
-    if (categories.length) {
-      return categories.map((category, index) => {
-        const name = typeof category === "string"
-          ? category
-          : category?.name || category?.category_name || category?.categoryName || `Category ${index + 1}`;
-        const count = foods.filter((food) => getFoodCategory(food).toLowerCase() === String(name).toLowerCase()).length;
-        return { name, count, Icon: iconList[index % iconList.length], className: colors[index % colors.length] };
+  // Food modal
+  const openFoodModal = (food = null) => {
+    setEditingId(food?.id || null);
+
+    if (food) {
+      setFoodForm({
+        name: food.name || "",
+        category_id: String(food.category_id || ""),
+        description: food.description || "",
+        price: food.price || "",
+        image_url: food.image_url || "",
+        is_available: Boolean(Number(food.is_available)),
+      });
+    } else {
+      setFoodForm({
+        ...initialFood,
+        category_id: categories[0] ? String(categories[0].id) : "",
       });
     }
 
-    const uniqueNames = [...new Set(foods.map(getFoodCategory).filter((name) => name && name !== "Uncategorized"))];
-    return uniqueNames.slice(0, 6).map((name, index) => ({
-      name,
-      count: foods.filter((food) => getFoodCategory(food).toLowerCase() === name.toLowerCase()).length,
-      Icon: iconList[index % iconList.length],
-      className: colors[index % colors.length],
-    }));
-  }, [categories, foods]);
+    setModal("food");
+  };
+
+  const saveFood = async (e) => {
+    e.preventDefault();
+
+    if (!foodForm.category_id) {
+      showNotice("Please select a category.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const url = editingId
+        ? `${API_URL}/api/foods/${editingId}`
+        : `${API_URL}/api/foods`;
+console.log("CATEGORY API URL:", url);
+
+      const response = await fetch(url, {
+        method: editingId ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...foodForm,
+          price: Number(foodForm.price),
+          category_id: Number(foodForm.category_id),
+          is_available: foodForm.is_available ? 1 : 0,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Food save failed");
+      }
+
+      setModal(null);
+      showNotice(result.message || "Food saved successfully!");
+      await loadDashboard();
+    } catch (error) {
+      showNotice(error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteFood = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this food?")) return;
+
+    try {
+      const response = await fetch(`${API_URL}/api/foods/${id}`, {
+        method: "DELETE",
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) throw new Error(result.message);
+
+      showNotice(result.message);
+      await loadDashboard();
+    } catch (error) {
+      showNotice(error.message);
+    }
+  };
+
+  // Category modal
+  const openCategoryModal = (category = null) => {
+    setEditingId(category?.id || null);
+
+    setCategoryForm(
+      category
+        ? {
+            name: category.name || "",
+            description: category.description || "",
+            image_url: category.image_url || "",
+          }
+        : initialCategory
+    );
+
+    setModal("category");
+  };
+
+ const saveCategory = async (e) => {
+  e.preventDefault();
+
+  try {
+    setSaving(true);
+
+    const url = editingId
+      ? `${API_URL}/api/categories/${editingId}`
+      : `${API_URL}/api/categories`;
+
+    const response = await fetch(url, {
+      method: editingId ? "PUT" : "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(categoryForm),
+    });
+
+    const responseText = await response.text();
+
+    console.log("CATEGORY SAVE STATUS:", response.status);
+    console.log("CATEGORY SAVE RESPONSE:", responseText);
+
+    let result;
+
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      throw new Error(
+        `Backend returned HTML instead of JSON. Status: ${response.status}`
+      );
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        result.message || result.error || "Category save failed"
+      );
+    }
+
+    setModal(null);
+    showNotice(result.message || "Category saved successfully!");
+
+    await loadDashboard();
+  } catch (error) {
+    console.error("Category Save Error:", error);
+    showNotice(error.message);
+  } finally {
+    setSaving(false);
+  }
+};
+
+  const deleteCategory = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this category?")) return;
+
+    try {
+      const response = await fetch(`${API_URL}/api/categories/${id}`, {
+        method: "DELETE",
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) throw new Error(result.message);
+
+      showNotice(result.message);
+      await loadDashboard();
+    } catch (error) {
+      showNotice(error.message);
+    }
+  };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#FFF9F4] text-[#38231C]">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <div className="min-h-screen bg-[#FFF8F3] text-[#2C0E05]">
+      <style jsx global>{`
+        @keyframes modalIn {
+          from {
+            opacity: 0;
+            transform: translateY(12px) scale(0.98);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+      `}</style>
 
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        {/* Admin-only top bar */}
-        <header className="sticky top-0 z-20 flex h-[68px] shrink-0 items-center justify-between border-b border-[#E9D9CC] bg-[#FFFDF9]/95 px-4 backdrop-blur-md sm:px-6 lg:px-8">
-          <div className="flex min-w-0 items-center gap-3">
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+
+      <main className="min-h-screen lg:ml-64">
+        {/* Topbar */}
+        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#F0E1D8] bg-white/90 px-5 py-4 backdrop-blur-md md:px-8">
+          <div className="flex items-center gap-3">
             <button
-              type="button"
-              onClick={() => setSidebarOpen(true)}
-              aria-label="Open sidebar"
-              className="rounded-xl border border-[#E9D9CC] bg-white p-2.5 text-[#5C2C19] shadow-sm transition hover:bg-[#F8EDE3] lg:hidden"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="rounded-lg border border-[#F0E1D8] p-2 lg:hidden"
             >
-              <FiMenu className="h-5 w-5" />
+              <FiLayers size={20} />
             </button>
-            <div className="hidden items-center gap-2 text-sm text-[#8C7B70] sm:flex">
-              <span>Admin</span>
-              <FiChevronRight className="h-4 w-4" />
-              <span className="font-semibold text-[#4C2415]">Dashboard</span>
-            </div>
-            <div className="sm:hidden">
-              <p className="text-xs text-[#8C7B70]">Admin</p>
-              <p className="text-sm font-bold text-[#4C2415]">Dashboard</p>
+
+            <div>
+              <h1 className="text-lg font-bold md:text-xl">Admin Dashboard</h1>
+              <p className="text-xs text-gray-500">
+                Manage your HomeBite store
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4">
-            <label className="hidden h-10 w-44 items-center gap-2 rounded-xl border border-[#E9D9CC] bg-white px-3 text-[#8C7B70] md:flex lg:w-56">
-              <FiSearch className="h-4 w-4 shrink-0" />
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search foods..."
-                className="min-w-0 flex-1 bg-transparent text-sm text-[#38231C] outline-none placeholder:text-[#AA9A90]"
-              />
-            </label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setNoticeOpen((value) => !value)}
-                aria-label="Notifications"
-                className="relative rounded-xl p-2.5 text-[#6A3824] transition hover:bg-[#F6E9DE]"
-              >
-                <FiBell className="h-5 w-5" />
-                <span className="absolute right-2 top-2 h-2 w-2 rounded-full border border-[#FFFDF9] bg-[#D65D42]" />
-              </button>
-              {noticeOpen && (
-                <div className="absolute right-0 top-12 z-50 w-64 rounded-2xl border border-[#EAD8C8] bg-white p-4 shadow-xl">
-                  <div className="flex items-center justify-between">
-                    <p className="font-bold text-[#4C2415]">Notifications</p>
-                    <button onClick={() => setNoticeOpen(false)} aria-label="Close notifications"><FiX /></button>
-                  </div>
-                  <p className="mt-2 text-sm text-[#817168]">You are all caught up for now.</p>
-                </div>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#C58B57] to-[#8B4525] font-serif font-bold text-white shadow-sm">A</div>
-              <div className="hidden sm:block">
-                <p className="text-sm font-bold text-[#4C2415]">Admin</p>
-                <p className="text-[11px] text-[#9A877B]">Super Admin</p>
-              </div>
-              <FiChevronDown className="hidden h-4 w-4 text-[#8C7B70] sm:block" />
+          <div className="flex items-center gap-3">
+            <button
+              onClick={loadDashboard}
+              className="flex items-center gap-2 rounded-lg bg-[#F3E3DC] px-3 py-2 text-sm font-medium transition hover:bg-[#EBD2C5]"
+            >
+              <FiRefreshCw className={loading ? "animate-spin" : ""} />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2C0E05] font-bold text-white">
+              A
             </div>
           </div>
         </header>
 
-        {/* Only this main content area scrolls; sidebar scrolls independently */}
-        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-          <div className="mx-auto max-w-[1700px] space-y-6 px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
-            {/* Welcome hero */}
-            <section className="relative isolate overflow-hidden rounded-2xl border border-[#F0DFCF] bg-gradient-to-r from-[#FFF0E0] via-[#FFF8EF] to-[#F8D8B9] p-5 shadow-sm sm:p-7 lg:min-h-[220px] lg:p-8">
-              <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full border-[24px] border-white/25 sm:right-20 sm:h-64 sm:w-64" />
-              <div className="pointer-events-none absolute right-10 top-10 hidden h-28 w-28 rounded-full bg-[#E8BD91]/25 blur-2xl lg:block" />
-              <div className="relative z-10 max-w-2xl">
-                <span className="inline-flex items-center gap-2 rounded-full border border-[#E9B77B] bg-[#FFF4DF] px-3 py-1.5 text-xs font-semibold text-[#87451F]">
-                  <FiCoffee className="h-4 w-4" /> Your kitchen, your business
-                </span>
-                <h1 className="mt-4 font-serif text-3xl font-bold tracking-tight text-[#2C1710] sm:text-4xl">
-                  Welcome back, <span className="text-[#B65D30]">Admin!</span>
-                </h1>
-                <p className="mt-2 max-w-xl text-sm leading-6 text-[#77675D] sm:text-base">
-                  Here&apos;s what&apos;s happening with HomeBite today. Keep your homemade food business running beautifully.
+        <div className="space-y-8 p-5 md:p-8">
+          {/* Welcome */}
+          <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#2C0E05] to-[#6B3020] p-6 text-white shadow-lg md:p-8">
+            <div className="relative z-10 max-w-xl">
+              <p className="mb-2 text-sm text-[#E9C6A7]">
+                Welcome back, Admin!
+              </p>
+              <h2 className="text-2xl font-bold md:text-3xl">
+                Manage your homemade food business.
+              </h2>
+              <p className="mt-2 text-sm text-[#F3E3DC]">
+                Track orders, earnings, foods and categories from one place.
+              </p>
+
+              <Link
+                href="/admin/foods"
+                className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#B08A55] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#9B7440]"
+              >
+                <FiEye /> View Food Management
+              </Link>
+            </div>
+
+            <div className="pointer-events-none absolute -right-10 -top-16 h-64 w-64 rounded-full border-[30px] border-white/5" />
+            <div className="pointer-events-none absolute -bottom-24 right-32 h-56 w-56 rounded-full bg-white/5" />
+          </section>
+
+          {/* Stats */}
+          <section>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold">Overview</h2>
+              <span className="text-xs text-gray-500">Live database data</span>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <StatCard
+                title="Total Orders"
+                value={Number(stats.totalOrders || 0).toLocaleString()}
+                subtitle="All placed orders"
+                icon={FiShoppingBag}
+                color="bg-[#F3E3DC] text-[#8B4934]"
+              />
+
+              <StatCard
+                title="Total Earnings"
+                value={money(stats.totalEarnings)}
+                subtitle="From delivered orders"
+                icon={FiDollarSign}
+                color="bg-[#E5F3E8] text-[#287A43]"
+              />
+
+              <StatCard
+                title="Total Foods"
+                value={Number(stats.totalFoods || 0).toLocaleString()}
+                subtitle="Food items in store"
+                icon={FiGrid}
+                color="bg-[#FFF0D8] text-[#A66B19]"
+              />
+
+              <StatCard
+                title="Categories"
+                value={Number(stats.totalCategories || 0).toLocaleString()}
+                subtitle="Food categories"
+                icon={FiLayers}
+                color="bg-[#E9E5F8] text-[#6653A4]"
+              />
+            </div>
+          </section>
+
+          {/* Sales chart */}
+          <section className="rounded-2xl border border-[#F0E1D8] bg-white p-5 shadow-sm md:p-6">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold">Sales Statistics</h2>
+                <p className="mt-1 text-xs text-gray-500">
+                  Delivered order earnings · Last 7 days
                 </p>
-                <div className="mt-5 flex flex-wrap gap-3">
-                  <Link href="/admin/foods" className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#713016] to-[#4B1D0D] px-4 py-3 text-sm font-semibold text-white shadow-md shadow-[#4B1D0D]/15 transition hover:-translate-y-0.5">
-                    <FiPlus className="h-4 w-4" /> Manage Foods
-                  </Link>
-                  <Link href="/admin/orders" className="inline-flex items-center gap-2 rounded-xl border border-[#D9A77F] bg-white/60 px-4 py-3 text-sm font-semibold text-[#8A411F] transition hover:bg-white">
-                    <FiShoppingCart className="h-4 w-4" /> View Orders <FiArrowUpRight className="h-4 w-4" />
-                  </Link>
-                </div>
               </div>
-              <div className="pointer-events-none absolute bottom-0 right-0 hidden h-full w-[36%] items-end justify-center lg:flex">
-                <div className="mb-8 mr-8 rotate-[-7deg] rounded-[35%] border-[10px] border-[#D8B18A] bg-[#F8E5CC] p-4 shadow-xl">
-                  <div className="flex h-36 w-36 items-center justify-center rounded-full bg-gradient-to-br from-[#B66C32] via-[#9C4C20] to-[#57240F] shadow-inner">
-                    <FiCoffee className="h-16 w-16 text-[#FFE6B8]" />
-                  </div>
-                </div>
-                <p className="absolute right-7 top-10 max-w-24 rotate-6 font-serif text-xl font-bold leading-tight text-[#A95D32]">Good Food,<br />Good Mood ♡</p>
+
+              <span className="rounded-full bg-[#F3E3DC] px-3 py-1 text-xs font-semibold text-[#713B2A]">
+                Weekly Report
+              </span>
+            </div>
+
+            {sales.length === 0 ? (
+              <div className="flex min-h-48 flex-col items-center justify-center rounded-xl bg-[#FFF8F3] text-center">
+                <FiDollarSign size={35} className="mb-3 text-[#B08A55]" />
+                <p className="font-semibold">No sales data yet</p>
+                <p className="mt-1 text-sm text-gray-500">
+                  Delivered orders will appear here.
+                </p>
               </div>
-            </section>
+            ) : (
+              <div className="flex h-64 items-end gap-3 overflow-x-auto border-b border-l border-gray-200 px-2 pb-2 pt-6 sm:gap-6">
+                {sales.map((item, index) => {
+                  const height =
+                    (Number(item.earnings || 0) / maxEarning) * 100;
 
-            {/* Stat cards */}
-            <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <StatCard title="Total Foods" value={loading ? "—" : foods.length} subtitle="Food items in your catalog" icon={FiCoffee} tone="amber" trend="+12%" />
-              <StatCard title="Categories" value={loading ? "—" : (categories.length || categoryCards.length)} subtitle="Food collections" icon={FiGrid} tone="cream" trend="+1%" />
-              <StatCard title="Available Foods" value={loading ? "—" : availableFoods.length} subtitle="Currently available" icon={FiCheckCircle} tone="green" trend={`${foods.length ? Math.round((availableFoods.length / foods.length) * 100) : 0}%`} />
-              <StatCard title="Unavailable Foods" value={loading ? "—" : unavailableFoods.length} subtitle="Currently unavailable" icon={FiPackage} tone="coral" trend={unavailableFoods.length ? "Needs review" : "All clear"} down={unavailableFoods.length > 0} />
-            </section>
+                  return (
+                    <div
+                      key={item.sale_date}
+                      className="flex h-full min-w-12 flex-1 flex-col items-center justify-end gap-2"
+                    >
+                      <span className="text-[10px] font-semibold text-gray-500 sm:text-xs">
+                        {money(item.earnings)}
+                      </span>
 
-            {error && (
-              <div className="flex items-start gap-3 rounded-xl border border-[#F2D0C7] bg-[#FFF0ED] p-4 text-sm text-[#9A3827]">
-                <FiAlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
-                <div>
-                  <p className="font-semibold">Could not load live data</p>
-                  <p className="mt-1">{error}</p>
-                </div>
+                      <div className="flex h-full w-full items-end justify-center">
+                        <div
+                          title={`${money(item.earnings)} earnings`}
+                          style={{ height: `${Math.max(height, 3)}%` }}
+                          className="w-full max-w-12 rounded-t-lg bg-gradient-to-t from-[#713B2A] to-[#B08A55] transition-all duration-700 hover:brightness-110"
+                        />
+                      </div>
+
+                      <span className="text-[10px] text-gray-500 sm:text-xs">
+                        {new Date(item.sale_date).toLocaleDateString(
+                          "en-GB",
+                          { day: "2-digit", month: "short" }
+                        )}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             )}
+          </section>
 
-            {/* Food catalog */}
-            <section className="overflow-hidden rounded-2xl border border-[#EDE4DE] bg-white shadow-sm shadow-[#4B2410]/[0.03]">
-              <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                <div>
-                  <h2 className="font-serif text-2xl font-bold text-[#2D1911]">Food Catalog</h2>
-                  <p className="mt-1 text-sm text-[#7E716A]">Search and monitor the food items in your store.</p>
+          {/* Food management */}
+          <section className="overflow-hidden rounded-2xl border border-[#F0E1D8] bg-white shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#F0E1D8] p-5">
+              <div>
+                <h2 className="text-lg font-bold">Food Management</h2>
+                <p className="mt-1 text-xs text-gray-500">
+                  Add, edit and manage food items
+                </p>
+              </div>
+
+              <button
+                onClick={() => openFoodModal()}
+                className="flex items-center gap-2 rounded-lg bg-[#2C0E05] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#6B3020]"
+              >
+                <FiPlus /> Add Food
+              </button>
+            </div>
+
+            <div className="p-5">
+              <div className="relative mb-5 max-w-sm">
+                <FiSearch className="absolute left-3 top-3 text-gray-400" />
+                <input
+                  value={foodSearch}
+                  onChange={(e) => setFoodSearch(e.target.value)}
+                  placeholder="Search food or category..."
+                  className="w-full rounded-lg border border-[#EADBD2] py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-[#B08A55]"
+                />
+              </div>
+
+              {loading ? (
+                <div className="py-12 text-center text-sm text-gray-500">
+                  Loading foods...
                 </div>
-                <Link href="/admin/foods" className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#713016] to-[#4B1D0D] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:brightness-110">
-                  <FiPlus className="h-4 w-4" /> Add Food
-                </Link>
-              </div>
-
-              <div className="flex flex-col gap-3 px-5 pb-4 sm:flex-row sm:px-6">
-                <label className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl border border-[#E5DCD5] bg-[#FFFEFC] px-3 text-[#8D7B70] focus-within:border-[#C18A5A]">
-                  <FiSearch className="h-4 w-4 shrink-0" />
-                  <input
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Search food name or category..."
-                    className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[#AA9A90]"
-                  />
-                </label>
-                <select
-                  value={statusFilter}
-                  onChange={(event) => setStatusFilter(event.target.value)}
-                  className="h-11 rounded-xl border border-[#E5DCD5] bg-white px-3 text-sm text-[#5F4B40] outline-none focus:border-[#C18A5A]"
-                  aria-label="Filter food availability"
-                >
-                  <option value="all">All foods</option>
-                  <option value="available">Available</option>
-                  <option value="unavailable">Unavailable</option>
-                </select>
-                <button
-                  type="button"
-                  onClick={() => loadDashboard(true)}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#E5DCD5] px-4 text-sm font-semibold text-[#713016] transition hover:bg-[#FFF5EB] disabled:opacity-60"
-                  disabled={refreshing}
-                >
-                  <FiRefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-                  <span className="sm:hidden">Refresh</span>
-                </button>
-              </div>
-
-              <div className="overflow-x-auto px-5 pb-2 sm:px-6">
-                <table className="w-full min-w-[690px] border-separate border-spacing-0 text-left">
-                  <thead>
-                    <tr className="bg-[#FAF3ED] text-xs font-bold text-[#7D3F22]">
-                      <th className="rounded-l-xl px-4 py-3">Food Item</th>
-                      <th className="px-4 py-3">Category</th>
-                      <th className="px-4 py-3">Price</th>
-                      <th className="px-4 py-3">Status</th>
-                      <th className="rounded-r-xl px-4 py-3 text-right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loading ? (
-                      <tr><td colSpan={5} className="px-4 py-12 text-center text-sm text-[#8D7B70]">Loading food catalog...</td></tr>
-                    ) : visibleFoods.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="px-4 py-12 text-center">
-                          <FiPackage className="mx-auto h-8 w-8 text-[#C6A995]" />
-                          <p className="mt-2 text-sm font-semibold text-[#5E4030]">No food items found</p>
-                          <p className="mt-1 text-xs text-[#9A877B]">Try another search or add food items from the Foods page.</p>
-                        </td>
-                      </tr>
-                    ) : (
-                      visibleFoods.map((food, index) => {
-                        const isAvailable = getAvailable(food);
-                        const image = getFoodImage(food);
-                        return (
-                          <tr key={getFoodId(food, index)} className="border-b border-[#F0E9E4] text-sm transition hover:bg-[#FFFBF7]">
-                            <td className="border-b border-[#F0E9E4] px-4 py-3">
-                              <div className="flex items-center gap-3">
-                                {image ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={image} alt={getFoodName(food)} className="h-11 w-11 shrink-0 rounded-xl border border-[#EDE0D4] object-cover" />
-                                ) : (
-                                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#EDE0D4] bg-[#FFF0E0] text-[#9A542E]">
-                                    <FiCoffee className="h-5 w-5" />
-                                  </div>
-                                )}
-                                <div>
-                                  <p className="font-semibold text-[#38231C]">{getFoodName(food)}</p>
-                                  <p className="mt-1 text-[11px] text-[#A09086]">ID: {getFoodId(food, index)}</p>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="border-b border-[#F0E9E4] px-4 py-3">
-                              <span className="inline-flex rounded-full bg-[#F8E7DA] px-3 py-1 text-xs font-semibold text-[#914522]">{getFoodCategory(food)}</span>
-                            </td>
-                            <td className="border-b border-[#F0E9E4] px-4 py-3 font-semibold text-[#49352B]">{money(getFoodPrice(food))}</td>
-                            <td className="border-b border-[#F0E9E4] px-4 py-3">
-                              <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${isAvailable ? "bg-[#E3F5E8] text-[#247849]" : "bg-[#FDE7E5] text-[#B3342A]"}`}>
-                                <span className={`h-1.5 w-1.5 rounded-full ${isAvailable ? "bg-[#29965A]" : "bg-[#D94B40]"}`} />
-                                {isAvailable ? "Available" : "Unavailable"}
-                              </span>
-                            </td>
-                            <td className="border-b border-[#F0E9E4] px-4 py-3 text-right">
-                              <Link href="/admin/foods" aria-label={`View ${getFoodName(food)}`} className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#EDE0D4] text-[#85401F] transition hover:bg-[#FFF0E2]">
-                                <FiEye className="h-4 w-4" />
-                              </Link>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="flex flex-col gap-3 px-6 py-4 text-xs text-[#897970] sm:flex-row sm:items-center sm:justify-between">
-                <span>
-                  Showing {visibleFoods.length} of {filteredFoods.length} food{filteredFoods.length === 1 ? "" : "s"}
-                </span>
-                {filteredFoods.length > 5 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowAllFoods((value) => !value)}
-                    className="inline-flex items-center gap-2 self-start font-bold text-[#8A401E] hover:text-[#B65D30] sm:self-auto"
-                  >
-                    {showAllFoods ? "Show less" : "View all foods"} <FiArrowUpRight className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-            </section>
-
-            {/* Categories */}
-            <section className="rounded-2xl border border-[#EDE4DE] bg-white p-5 shadow-sm shadow-[#4B2410]/[0.03] sm:p-6">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h2 className="font-serif text-xl font-bold text-[#2D1911] sm:text-2xl">Explore Categories</h2>
-                  <p className="mt-1 text-sm text-[#7E716A]">See how your food collection is organized.</p>
-                </div>
-                <Link href="/admin/categories" className="inline-flex items-center gap-2 self-start text-sm font-semibold text-[#8A401E] hover:text-[#B65D30]">
-                  Manage categories <FiArrowUpRight className="h-4 w-4" />
-                </Link>
-              </div>
-
-              {categoryCards.length ? (
-                <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-                  {categoryCards.map(({ name, count, Icon, className }) => (
-                    <Link
-                      key={name}
-                      href="/admin/categories"
-                      className={`group rounded-2xl border p-4 text-center transition hover:-translate-y-1 hover:shadow-md ${className}`}
-                    >
-                      <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-white/80 shadow-sm">
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <p className="mt-3 text-sm font-bold">{name}</p>
-                      <p className="mt-1 text-xs opacity-75">{count} item{count === 1 ? "" : "s"}</p>
-                    </Link>
-                  ))}
+              ) : filteredFoods.length === 0 ? (
+                <div className="py-12 text-center text-sm text-gray-500">
+                  No food items found.
                 </div>
               ) : (
-                <div className="mt-5 rounded-xl border border-dashed border-[#E8D7C8] p-8 text-center">
-                  <FiGrid className="mx-auto h-8 w-8 text-[#B9957C]" />
-                  <p className="mt-2 text-sm font-semibold text-[#68432E]">No categories to display yet</p>
-                  <p className="mt-1 text-xs text-[#958276]">Create categories to organize your homemade food items.</p>
-                  <Link href="/admin/categories" className="mt-4 inline-flex rounded-lg bg-[#6C2B14] px-4 py-2 text-sm font-semibold text-white">Manage categories</Link>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[700px] text-left text-sm">
+                    <thead>
+                      <tr className="border-b bg-[#FFF8F3] text-xs uppercase text-gray-500">
+                        <th className="px-3 py-3">Food</th>
+                        <th className="px-3 py-3">Category</th>
+                        <th className="px-3 py-3">Price</th>
+                        <th className="px-3 py-3">Status</th>
+                        <th className="px-3 py-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {filteredFoods.map((food) => (
+                        <tr
+                          key={food.id}
+                          className="border-b border-[#F4EAE4] transition hover:bg-[#FFFCFA]"
+                        >
+                          <td className="px-3 py-3">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={getImage(food.image_url)}
+                                alt={food.name}
+                                className="h-12 w-12 rounded-lg border border-[#F0E1D8] object-cover"
+                              onError={(e) => {
+  e.currentTarget.style.display = "none";
+}}
+                              />
+                              <span className="font-semibold">
+                                {food.name}
+                              </span>
+                            </div>
+                          </td>
+
+                          <td className="px-3 py-3 text-gray-600">
+                            {food.category_name}
+                          </td>
+
+                          <td className="px-3 py-3 font-semibold">
+                            {money(food.price)}
+                          </td>
+
+                          <td className="px-3 py-3">
+                            <span
+                              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                Number(food.is_available)
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-red-100 text-red-600"
+                              }`}
+                            >
+                              {Number(food.is_available)
+                                ? "Available"
+                                : "Unavailable"}
+                            </span>
+                          </td>
+
+                          <td className="px-3 py-3">
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => openFoodModal(food)}
+                                title="Edit food"
+                                className="rounded-lg bg-[#FFF0D8] p-2 text-[#9B641D] transition hover:bg-[#F8DDAF]"
+                              >
+                                <FiEdit2 />
+                              </button>
+
+                              <button
+                                onClick={() => deleteFood(food.id)}
+                                title="Delete food"
+                                className="rounded-lg bg-red-50 p-2 text-red-600 transition hover:bg-red-100"
+                              >
+                                <FiTrash2 />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
-            </section>
+            </div>
+          </section>
 
-            <footer className="flex flex-col gap-2 border-t border-[#E8DCD3] py-5 text-xs text-[#9A897E] sm:flex-row sm:items-center sm:justify-between">
-              <p>© {new Date().getFullYear()} HomeBite Admin Panel. All rights reserved.</p>
-              <p>Made with care · Homemade goodness</p>
-            </footer>
-          </div>
-        </main>
-      </div>
+          {/* Category management */}
+          <section className="rounded-2xl border border-[#F0E1D8] bg-white p-5 shadow-sm">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold">Category Management</h2>
+                <p className="mt-1 text-xs text-gray-500">
+                  Manage food categories and their images
+                </p>
+              </div>
+
+              <button
+                onClick={() => openCategoryModal()}
+                className="flex items-center gap-2 rounded-lg bg-[#2C0E05] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#6B3020]"
+              >
+                <FiPlus /> Add Category
+              </button>
+            </div>
+
+            {categories.length === 0 ? (
+              <p className="py-8 text-center text-sm text-gray-500">
+                No categories available.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {categories.map((category) => (
+                  <div
+                    key={category.id}
+                    className="group flex items-center gap-4 rounded-xl border border-[#F0E1D8] p-3 transition-all duration-300 hover:-translate-y-1 hover:border-[#D7B99F] hover:shadow-md"
+                  >
+                    <img
+                      src={getImage(category.image_url)}
+                      alt={category.name}
+                      className="h-16 w-16 rounded-xl object-cover"
+                    onError={(e) => {
+  e.currentTarget.style.display = "none";
+}}
+                    />
+
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate font-bold">{category.name}</h3>
+                      <p className="mt-1 text-xs text-gray-500">
+                        {category.food_count || 0} food items
+                      </p>
+
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          onClick={() => openCategoryModal(category)}
+                          className="text-xs font-semibold text-[#9B641D] hover:underline"
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          onClick={() => deleteCategory(category.id)}
+                          className="text-xs font-semibold text-red-600 hover:underline"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      </main>
+
+      {/* Notification */}
+      {notice && (
+        <div className="fixed bottom-5 right-5 z-[120] max-w-sm animate-[modalIn_.2s_ease-out] rounded-xl bg-[#2C0E05] px-5 py-3 text-sm text-white shadow-xl">
+          {notice}
+        </div>
+      )}
+
+      {/* Food form modal */}
+      {modal === "food" && (
+        <Modal
+          title={editingId ? "Edit Food" : "Add New Food"}
+          onClose={() => setModal(null)}
+        >
+          <form onSubmit={saveFood} className="space-y-4">
+            <div>
+              <label className="mb-1 block text-sm font-semibold">
+                Food Name *
+              </label>
+              <input
+                required
+                value={foodForm.name}
+                onChange={(e) =>
+                  setFoodForm({ ...foodForm, name: e.target.value })
+                }
+                placeholder="Enter food name"
+                className="w-full rounded-lg border border-[#EADBD2] px-4 py-3 text-sm outline-none focus:border-[#B08A55]"
+              />
+            </div>
+
+           <div>
+  <label className="mb-1 block text-sm font-semibold">
+    Food Category *
+  </label>
+
+  <select
+    required
+    value={foodForm.category_id}
+    onChange={(e) =>
+      setFoodForm({
+        ...foodForm,
+        category_id: e.target.value,
+      })
+    }
+    disabled={categories.length === 0}
+    className="w-full rounded-lg border border-[#EADBD2] bg-white px-4 py-3 text-sm outline-none transition focus:border-[#B08A55] disabled:cursor-not-allowed disabled:bg-gray-100"
+  >
+    <option value="">
+      {categories.length === 0
+        ? "No categories found"
+        : "Select a food category"}
+    </option>
+
+    {categories.map((category) => (
+      <option key={category.id} value={category.id}>
+        {category.name}
+      </option>
+    ))}
+  </select>
+
+  {categories.length === 0 && (
+    <p className="mt-2 text-xs text-red-500">
+      No categories available. Please add a category first.
+    </p>
+  )}
+</div>
+
+            <div>
+              <label className="mb-1 block text-sm font-semibold">
+                Description
+              </label>
+              <textarea
+                rows={3}
+                value={foodForm.description}
+                onChange={(e) =>
+                  setFoodForm({ ...foodForm, description: e.target.value })
+                }
+                placeholder="Describe this food..."
+                className="w-full rounded-lg border border-[#EADBD2] px-4 py-3 text-sm outline-none focus:border-[#B08A55]"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-semibold">
+                Price (৳) *
+              </label>
+              <input
+                required
+                type="number"
+                min="0"
+                step="0.01"
+                value={foodForm.price}
+                onChange={(e) =>
+                  setFoodForm({ ...foodForm, price: e.target.value })
+                }
+                placeholder="Enter price"
+                className="w-full rounded-lg border border-[#EADBD2] px-4 py-3 text-sm outline-none focus:border-[#B08A55]"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-semibold">
+                Food Image URL
+              </label>
+              <input
+                type="url"
+                value={foodForm.image_url}
+                onChange={(e) =>
+                  setFoodForm({ ...foodForm, image_url: e.target.value })
+                }
+                placeholder="https://example.com/food.jpg"
+                className="w-full rounded-lg border border-[#EADBD2] px-4 py-3 text-sm outline-none focus:border-[#B08A55]"
+              />
+
+              {foodForm.image_url && (
+                <div className="mt-3">
+                  <p className="mb-2 text-xs text-gray-500">Image Preview</p>
+                  <img
+                    src={foodForm.image_url}
+                    alt="Food preview"
+                    className="h-36 w-full rounded-xl border border-[#F0E1D8] object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                    onLoad={(e) => {
+                      e.currentTarget.style.display = "block";
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                checked={foodForm.is_available}
+                onChange={(e) =>
+                  setFoodForm({
+                    ...foodForm,
+                    is_available: e.target.checked,
+                  })
+                }
+                className="h-4 w-4 accent-[#2C0E05]"
+              />
+              Available for customers
+            </label>
+
+            <button
+              disabled={saving}
+              type="submit"
+              className="w-full rounded-lg bg-[#2C0E05] py-3 font-semibold text-white transition hover:bg-[#6B3020] disabled:opacity-60"
+            >
+              {saving ? "Saving..." : editingId ? "Update Food" : "Add Food"}
+            </button>
+          </form>
+        </Modal>
+      )}
+
+      {/* Category form modal */}
+      {modal === "category" && (
+        <Modal
+          title={editingId ? "Edit Category" : "Add New Category"}
+          onClose={() => setModal(null)}
+        >
+          <form onSubmit={saveCategory} className="space-y-4">
+            <div>
+              <label className="mb-1 block text-sm font-semibold">
+                Category Name *
+              </label>
+              <input
+                required
+                value={categoryForm.name}
+                onChange={(e) =>
+                  setCategoryForm({ ...categoryForm, name: e.target.value })
+                }
+                placeholder="Enter category name"
+                className="w-full rounded-lg border border-[#EADBD2] px-4 py-3 text-sm outline-none focus:border-[#B08A55]"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-semibold">
+                Description
+              </label>
+              <textarea
+                rows={3}
+                value={categoryForm.description}
+                onChange={(e) =>
+                  setCategoryForm({
+                    ...categoryForm,
+                    description: e.target.value,
+                  })
+                }
+                placeholder="Category description"
+                className="w-full rounded-lg border border-[#EADBD2] px-4 py-3 text-sm outline-none focus:border-[#B08A55]"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-semibold">
+                Category Image URL
+              </label>
+              <input
+                type="url"
+                value={categoryForm.image_url}
+                onChange={(e) =>
+                  setCategoryForm({
+                    ...categoryForm,
+                    image_url: e.target.value,
+                  })
+                }
+                placeholder="https://example.com/category.jpg"
+                className="w-full rounded-lg border border-[#EADBD2] px-4 py-3 text-sm outline-none focus:border-[#B08A55]"
+              />
+
+              {categoryForm.image_url && (
+                <img
+                  src={categoryForm.image_url}
+                  alt="Category preview"
+                  className="mt-3 h-36 w-full rounded-xl border border-[#F0E1D8] object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                  onLoad={(e) => {
+                    e.currentTarget.style.display = "block";
+                  }}
+                />
+              )}
+            </div>
+
+            <button
+              disabled={saving}
+              type="submit"
+              className="w-full rounded-lg bg-[#2C0E05] py-3 font-semibold text-white transition hover:bg-[#6B3020] disabled:opacity-60"
+            >
+              {saving
+                ? "Saving..."
+                : editingId
+                  ? "Update Category"
+                  : "Add Category"}
+            </button>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 }
