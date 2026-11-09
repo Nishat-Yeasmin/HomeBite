@@ -3,14 +3,25 @@ const express = require("express");
 const router = express.Router();
 const db = require("../config/db");
 
+const { verifyToken, adminOnly } = require("../middleware/authMiddleware");
+
 // ===============================
 // GET ALL CATEGORIES
 // ===============================
 router.get("/", async (req, res) => {
   try {
-    const [categories] = await db.query(
-      "SELECT id, name, description, image_url FROM categories ORDER BY id ASC"
-    );
+    const [categories] = await db.query(`
+      SELECT
+        c.id,
+        c.name,
+        c.description,
+        c.image_url,
+        COUNT(f.id) AS food_count
+      FROM categories c
+      LEFT JOIN foods f ON c.id = f.category_id
+      GROUP BY c.id, c.name, c.description, c.image_url
+      ORDER BY c.id ASC
+    `);
 
     return res.status(200).json({
       success: true,
@@ -18,11 +29,9 @@ router.get("/", async (req, res) => {
     });
   } catch (error) {
     console.error("GET CATEGORY ERROR:", error);
-
     return res.status(500).json({
       success: false,
       message: "Failed to fetch categories",
-      error: error.message,
     });
   }
 });
@@ -30,7 +39,7 @@ router.get("/", async (req, res) => {
 // ===============================
 // CREATE CATEGORY
 // ===============================
-router.post("/", async (req, res) => {
+router.post("/", verifyToken, adminOnly, async (req, res) => {
   try {
     const { name, description, image_url } = req.body;
 
@@ -71,7 +80,7 @@ router.post("/", async (req, res) => {
 // ===============================
 // UPDATE CATEGORY
 // ===============================
-router.put("/:id", async (req, res) => {
+router.put("/:id", verifyToken, adminOnly, async (req, res) => {
   try {
     const id = Number(req.params.id);
     const { name, description, image_url } = req.body;
@@ -133,7 +142,7 @@ router.put("/:id", async (req, res) => {
 // ===============================
 // DELETE CATEGORY
 // ===============================
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", verifyToken, adminOnly, async (req, res) => {
   try {
     const id = Number(req.params.id);
 
@@ -144,12 +153,24 @@ router.delete("/:id", async (req, res) => {
       });
     }
 
+    const [foods] = await db.query(
+      "SELECT id FROM foods WHERE category_id = ? LIMIT 1",
+      [id]
+    );
+
+    if (foods.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: "This category contains foods. Delete or move those foods first.",
+      });
+    }
+
     const [result] = await db.query(
       "DELETE FROM categories WHERE id = ?",
       [id]
     );
 
-    if (result.affectedRows === 0) {
+    if (!result.affectedRows) {
       return res.status(404).json({
         success: false,
         message: "Category not found",
@@ -162,12 +183,9 @@ router.delete("/:id", async (req, res) => {
     });
   } catch (error) {
     console.error("DELETE CATEGORY ERROR:", error);
-
     return res.status(500).json({
       success: false,
       message: "Failed to delete category",
-      error: error.message,
-      code: error.code,
     });
   }
 });

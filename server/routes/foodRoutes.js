@@ -2,6 +2,9 @@ const express = require("express");
 const router = express.Router();
 const db = require("../config/db");
 
+const { verifyToken, adminOnly } = require("../middleware/authMiddleware");
+
+
 // GET all foods
 router.get("/", async (req, res) => {
   try {
@@ -50,7 +53,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // ADD food
-router.post("/", async (req, res) => {
+router.post("/", verifyToken, adminOnly, async (req, res) => {
   try {
     const {
       category_id,
@@ -101,7 +104,7 @@ router.post("/", async (req, res) => {
 });
 
 // UPDATE food
-router.put("/:id", async (req, res) => {
+router.put("/:id", verifyToken, adminOnly, async (req, res) => {
   try {
     const {
       category_id,
@@ -154,7 +157,7 @@ router.put("/:id", async (req, res) => {
 });
 
 // DELETE food
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", verifyToken, adminOnly, async (req, res) => {
   try {
     // Preserve order history: do not delete foods used in previous orders.
     const [usedFoods] = await db.query(

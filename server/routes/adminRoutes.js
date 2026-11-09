@@ -1,6 +1,11 @@
+const { verifyToken, adminOnly } = require("../middleware/authMiddleware");
+
 const express = require("express");
 const router = express.Router();
+router.use(verifyToken, adminOnly);
 const db = require("../config/db");
+
+
 
 // Dashboard summary
 router.get("/stats", async (req, res) => {
