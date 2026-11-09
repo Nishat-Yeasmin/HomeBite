@@ -33,11 +33,12 @@ async function handleLogin(e) {
       password: formData.get("password"),
     });
 
-    if (data.user.role === "admin") {
-      router.push("/admin");
-    } else {
-      router.push("/");
-    }
+  const isAdmin =
+  data.user?.email?.toLowerCase() === "nishatyasminnisha@gmail.com" &&
+  data.user?.role === "admin";
+
+router.push(isAdmin ? "/admin" : "/");
+
   } catch (err) {
     setError(err.message || "Login failed. Please try again.");
   } finally {
@@ -143,7 +144,7 @@ async function handleLogin(e) {
 
                     <input
                       id="email"
-                      t  name="email"
+                       name="email"
   type="email"
   required
 

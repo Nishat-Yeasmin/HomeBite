@@ -51,9 +51,13 @@ export default function GoogleAuthButton({
           new Event("homebite-auth-changed")
         );
 
-        router.push(
-          data.user.role === "admin" ? "/admin" : "/"
-        );
+       const isAdmin =
+  data.user?.email?.toLowerCase() === "nishatyasminnisha@gmail.com" &&
+  data.user?.role === "admin";
+
+router.push(isAdmin ? "/admin" : "/");
+
+
       } catch (err) {
         setError(
           err.message || "Google sign-in failed. Please try again."

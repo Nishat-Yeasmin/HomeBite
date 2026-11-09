@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+
+import { useRouter } from "next/navigation";
+
 import {
   FiShoppingBag,
   FiDollarSign,
@@ -87,6 +90,9 @@ function Modal({ title, onClose, children }) {
 }
 
 export default function AdminDashboardPage() {
+  const router = useRouter();
+const [authorized, setAuthorized] = useState(false);
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [foods, setFoods] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -114,50 +120,80 @@ export default function AdminDashboardPage() {
     window.setTimeout(() => setNotice(""), 3500);
   };
 
-  const loadDashboard = useCallback(async () => {
-    try {
-      setLoading(true);
+ const loadDashboard = useCallback(async () => {
+  try {
+    setLoading(true);
 
-      const [foodRes, categoryRes, statsRes, salesRes] =
-        await Promise.all([
-          fetch(`${API_URL}/api/foods`),
-          fetch(`${API_URL}/api/categories`),
-          fetch(`${API_URL}/api/admin/stats`),
-          fetch(`${API_URL}/api/admin/sales`),
-        ]);
+    const token = localStorage.getItem("homebite-token");
 
-      if (!foodRes.ok || !categoryRes.ok || !statsRes.ok || !salesRes.ok) {
-        throw new Error("Could not load dashboard data");
-      }
+    const [foodRes, categoryRes, statsRes, salesRes] =
+      await Promise.all([
+        fetch(`${API_URL}/api/foods`),
+        fetch(`${API_URL}/api/categories`),
+        fetch(`${API_URL}/api/admin/stats`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`${API_URL}/api/admin/sales`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
 
-      const [foodData, categoryData, statsData, salesData] =
-        await Promise.all([
-          foodRes.json(),
-          categoryRes.json(),
-          statsRes.json(),
-          salesRes.json(),
-        ]);
-
-      setFoods(foodData.foods || []);
-
-const loadedCategories = categoryData.categories || [];
-setCategories(loadedCategories);
-
-console.log("Loaded categories:", loadedCategories);
-
-      setStats(statsData.stats || {});
-      setSales(salesData.sales || []);
-    } catch (error) {
-      console.error("Dashboard loading error:", error);
-      showNotice("Dashboard data load korte problem hoyeche.");
-    } finally {
-      setLoading(false);
+    if (!foodRes.ok) {
+      throw new Error("Failed to load foods");
     }
-  }, []);
 
-  useEffect(() => {
-    loadDashboard();
-  }, [loadDashboard]);
+    if (!categoryRes.ok) {
+      throw new Error("Failed to load categories");
+    }
+
+    const [foodData, categoryData] = await Promise.all([
+      foodRes.json(),
+      categoryRes.json(),
+    ]);
+
+    setFoods(foodData.foods || []);
+    setCategories(categoryData.categories || []);
+
+    if (statsRes.ok) {
+      const statsData = await statsRes.json();
+      setStats(statsData.stats || {});
+    } else {
+      console.error("Stats API failed:", statsRes.status);
+    }
+
+    if (salesRes.ok) {
+      const salesData = await salesRes.json();
+      setSales(salesData.sales || []);
+    } else {
+      console.error("Sales API failed:", salesRes.status);
+    }
+
+  } catch (error) {
+    console.error("Dashboard loading error:", error);
+    showNotice(error.message || "Dashboard data load failed");
+  } finally {
+    setLoading(false);
+  }
+}, []);
+
+useEffect(() => {
+  const token = localStorage.getItem("homebite-token");
+  const user = JSON.parse(
+    localStorage.getItem("homebite-user") || "null"
+  );
+
+  if (
+    !token ||
+    user?.email?.toLowerCase() !== "nishatyasminnisha@gmail.com"
+  ) {
+    router.replace("/");
+    return;
+  }
+
+  setAuthorized(true);
+  loadDashboard();
+}, [router, loadDashboard]);
+
 
   const filteredFoods = useMemo(() => {
     const query = foodSearch.toLowerCase().trim();
@@ -216,7 +252,10 @@ console.log("CATEGORY API URL:", url);
 
       const response = await fetch(url, {
         method: editingId ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
+     headers: {
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${localStorage.getItem("homebite-token")}`,
+},
         body: JSON.stringify({
           ...foodForm,
           price: Number(foodForm.price),
@@ -246,8 +285,11 @@ console.log("CATEGORY API URL:", url);
 
     try {
       const response = await fetch(`${API_URL}/api/foods/${id}`, {
-        method: "DELETE",
-      });
+  method: "DELETE",
+  headers: {
+    Authorization: `Bearer ${localStorage.getItem("homebite-token")}`,
+  },
+});
 
       const result = await response.json();
 
@@ -289,9 +331,10 @@ console.log("CATEGORY API URL:", url);
 
     const response = await fetch(url, {
       method: editingId ? "PUT" : "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+     headers: {
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${localStorage.getItem("homebite-token")}`,
+},
       body: JSON.stringify(categoryForm),
     });
 
@@ -332,9 +375,12 @@ console.log("CATEGORY API URL:", url);
     if (!window.confirm("Are you sure you want to delete this category?")) return;
 
     try {
-      const response = await fetch(`${API_URL}/api/categories/${id}`, {
-        method: "DELETE",
-      });
+     const response = await fetch(`${API_URL}/api/categories/${id}`, {
+  method: "DELETE",
+  headers: {
+    Authorization: `Bearer ${localStorage.getItem("homebite-token")}`,
+  },
+});
 
       const result = await response.json();
 
@@ -346,6 +392,16 @@ console.log("CATEGORY API URL:", url);
       showNotice(error.message);
     }
   };
+
+
+  if (!authorized) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#FFF8F3]">
+      <p className="text-[#2C0E05]">Verifying admin access...</p>
+    </div>
+  );
+}
+
 
   return (
     <div className="min-h-screen bg-[#FFF8F3] text-[#2C0E05]">
@@ -367,7 +423,7 @@ console.log("CATEGORY API URL:", url);
         onClose={() => setSidebarOpen(false)}
       />
 
-      <main className="min-h-screen lg:ml-64">
+      <main className="min-h-screen lg:ml-[280px]">
         {/* Topbar */}
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#F0E1D8] bg-white/90 px-5 py-4 backdrop-blur-md md:px-8">
           <div className="flex items-center gap-3">
@@ -401,7 +457,7 @@ console.log("CATEGORY API URL:", url);
           </div>
         </header>
 
-        <div className="space-y-8 p-5 md:p-8">
+       <div className="space-y-6 px-5 pb-5 pt-3 md:px-8 md:pb-8 md:pt-4">
           {/* Welcome */}
           <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#2C0E05] to-[#6B3020] p-6 text-white shadow-lg md:p-8">
             <div className="relative z-10 max-w-xl">
