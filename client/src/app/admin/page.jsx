@@ -18,6 +18,9 @@ import {
   FiImage,
   FiRefreshCw,
   FiEye,
+  FiUser,
+FiLogOut,
+FiChevronDown,
 } from "react-icons/fi";
 
 import Sidebar from "@/app/components/admin/Sidebar";
@@ -32,6 +35,7 @@ const money = (value) =>
   })}`;
 
 const getImage = (url) => url?.trim() || "/images/food-placeholder.png";
+
 
 const initialFood = {
   name: "",
@@ -115,6 +119,9 @@ const [authorized, setAuthorized] = useState(false);
 
   const [foodSearch, setFoodSearch] = useState("");
 
+  const [profileOpen, setProfileOpen] = useState(false);
+const [currentUser, setCurrentUser] = useState(null);
+
   const showNotice = (message) => {
     setNotice(message);
     window.setTimeout(() => setNotice(""), 3500);
@@ -176,8 +183,21 @@ const [authorized, setAuthorized] = useState(false);
   }
 }, []);
 
+const handleLogout = () => {
+  localStorage.removeItem("homebite-token");
+  localStorage.removeItem("homebite-user");
+
+  window.dispatchEvent(new Event("homebite-auth-changed"));
+
+  setProfileOpen(false);
+
+  router.replace("/");
+};
+
+
 useEffect(() => {
   const token = localStorage.getItem("homebite-token");
+
   const user = JSON.parse(
     localStorage.getItem("homebite-user") || "null"
   );
@@ -190,6 +210,7 @@ useEffect(() => {
     return;
   }
 
+  setCurrentUser(user);
   setAuthorized(true);
   loadDashboard();
 }, [router, loadDashboard]);
@@ -205,6 +226,14 @@ useEffect(() => {
       );
     });
   }, [foods, foodSearch]);
+
+  // Show only latest 6 foods on dashboard
+const dashboardFoods = useMemo(() => {
+  return [...filteredFoods]
+    .sort((a, b) => Number(b.id) - Number(a.id))
+    .slice(0, 6);
+}, [filteredFoods]);
+
 
   const maxEarning = Math.max(
     ...sales.map((item) => Number(item.earnings || 0)),
@@ -417,13 +446,14 @@ console.log("CATEGORY API URL:", url);
           }
         }
       `}</style>
-
+<div className="min-h-screen lg:pl-[272px]">
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
 
-      <main className="min-h-screen lg:ml-[280px]">
+      <main className="min-h-screen ">
+        
         {/* Topbar */}
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#F0E1D8] bg-white/90 px-5 py-4 backdrop-blur-md md:px-8">
           <div className="flex items-center gap-3">
@@ -442,19 +472,94 @@ console.log("CATEGORY API URL:", url);
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={loadDashboard}
-              className="flex items-center gap-2 rounded-lg bg-[#F3E3DC] px-3 py-2 text-sm font-medium transition hover:bg-[#EBD2C5]"
-            >
-              <FiRefreshCw className={loading ? "animate-spin" : ""} />
-              <span className="hidden sm:inline">Refresh</span>
-            </button>
+          
+<div className="flex items-center gap-3">
+  {/* Refresh Button */}
+  <button
+    onClick={loadDashboard}
+    className="flex cursor-pointer items-center gap-2 rounded-lg bg-[#F3E3DC] px-3 py-2 text-sm font-medium transition-all duration-200 hover:bg-[#EBD2C5] hover:shadow-sm active:scale-95"
+  >
+    <FiRefreshCw className={loading ? "animate-spin" : ""} />
+    <span className="hidden sm:inline">Refresh</span>
+  </button>
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2C0E05] font-bold text-white">
-              A
+  {/* Profile Dropdown */}
+  <div className="relative">
+    <button
+      onClick={() => setProfileOpen(!profileOpen)}
+      className="flex cursor-pointer items-center gap-2 rounded-xl  bg-white p-1.5 transition-all duration-200 hover:border-[#B08A55] hover:bg-[#FFF8F3] hover:shadow-sm"
+    >
+      <img
+        src="/images/admin-profile.jpg"
+        alt="Admin"
+        className="h-9 w-9 rounded-full border-2 border-[#B08A55] object-cover"
+        onError={(e) => {
+          e.currentTarget.style.display = "none";
+        }}
+      />
+
+      <FiChevronDown
+        className={`mr-1 text-gray-500 transition-transform duration-200 ${
+          profileOpen ? "rotate-180" : ""
+        }`}
+      />
+    </button>
+
+    {profileOpen && (
+      <>
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setProfileOpen(false)}
+        />
+
+        <div className="absolute right-0 top-full z-50 mt-2 w-45 overflow-hidden rounded-xl border border-[#F0E1D8] bg-white shadow-xl cursor-pointer">
+
+          {/* Profile Information */}
+          <div className="border-b border-[#F0E1D8] bg-[#FFF8F3] px-3 py-3 ">
+            <div className="flex items-center gap-3">
+              <img
+                src="/images/admin-profile.jpg"
+                alt="Admin Profile"
+                className="h-10 w-10 rounded-full border-2 border-[#B08A55] object-cover"
+              />
+
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold text-[#2C0E05]">
+                  {currentUser?.name || "Admin"}
+                </p>
+
+                <p className="text-[10px] font-semibold text-[#9B641D]">
+                  SUPER ADMIN
+                </p>
+              </div>
             </div>
           </div>
+
+          {/* Dropdown Actions */}
+          <div className="p-1.5">
+            <Link
+              href="/profile"
+              onClick={() => setProfileOpen(false)}
+              className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-[#FFF3E9] hover:text-[#8B4930]"
+            >
+              <FiUser size={17} />
+              My Profile
+            </Link>
+
+            <button
+              onClick={handleLogout}
+              className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100"
+            >
+              <FiLogOut size={17} />
+              Logout
+            </button>
+          </div>
+        </div>
+      </>
+    )}
+  </div>
+</div>
+
         </header>
 
        <div className="space-y-6 px-5 pb-5 pt-3 md:px-8 md:pb-8 md:pt-4">
@@ -587,20 +692,33 @@ console.log("CATEGORY API URL:", url);
           {/* Food management */}
           <section className="overflow-hidden rounded-2xl border border-[#F0E1D8] bg-white shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#F0E1D8] p-5">
-              <div>
-                <h2 className="text-lg font-bold">Food Management</h2>
-                <p className="mt-1 text-xs text-gray-500">
-                  Add, edit and manage food items
-                </p>
-              </div>
+  <div>
+    <h2 className="text-lg font-bold">Food Management</h2>
+    <p className="mt-1 text-xs text-gray-500">
+      Showing latest 6 food items
+    </p>
+  </div>
 
-              <button
-                onClick={() => openFoodModal()}
-                className="flex items-center gap-2 rounded-lg bg-[#2C0E05] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#6B3020]"
-              >
-                <FiPlus /> Add Food
-              </button>
-            </div>
+  <div className="flex flex-wrap items-center gap-2">
+
+    <Link
+      href="/admin/foods"
+      className="flex items-center gap-2 rounded-lg border border-[#B08A55] px-4 py-2.5 text-sm font-semibold text-[#8B4934] transition-all duration-300 hover:-translate-y-1 hover:bg-[#FFF3E9] hover:shadow-md"
+    >
+      <FiEye />
+      View All Foods
+    </Link>
+
+    <button
+      onClick={() => openFoodModal()}
+      className="flex items-center gap-2 rounded-lg bg-[#2C0E05] px-4 py-2.5 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-1 hover:bg-[#6B3020] hover:shadow-lg active:scale-95"
+    >
+      <FiPlus />
+      Add Food
+    </button>
+
+  </div>
+</div>
 
             <div className="p-5">
               <div className="relative mb-5 max-w-sm">
@@ -617,92 +735,107 @@ console.log("CATEGORY API URL:", url);
                 <div className="py-12 text-center text-sm text-gray-500">
                   Loading foods...
                 </div>
-              ) : filteredFoods.length === 0 ? (
-                <div className="py-12 text-center text-sm text-gray-500">
-                  No food items found.
+             
+) : filteredFoods.length === 0 ? (
+  <div className="py-12 text-center text-sm text-gray-500">
+    No food items found.
+  </div>
+) : (
+  <>
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[700px] text-left text-sm">
+        <thead>
+          <tr className="border-b bg-[#FFF8F3] text-xs uppercase text-gray-500">
+            <th className="px-3 py-3">Food</th>
+            <th className="px-3 py-3">Category</th>
+            <th className="px-3 py-3">Price</th>
+            <th className="px-3 py-3">Status</th>
+            <th className="px-3 py-3 text-right">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {dashboardFoods.map((food, index) => (
+            <tr
+              key={food.id}
+              style={{ animationDelay: `${index * 80}ms` }}
+              className="animate-[modalIn_.35s_ease-out_both] border-b border-[#F4EAE4] transition-all duration-300 hover:bg-[#FFFCFA]"
+            >
+              <td className="px-3 py-3">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={getImage(food.image_url)}
+                    alt={food.name}
+                    className="h-12 w-12 rounded-lg border border-[#F0E1D8] object-cover transition-transform duration-300 hover:scale-110"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                  <span className="font-semibold">{food.name}</span>
                 </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[700px] text-left text-sm">
-                    <thead>
-                      <tr className="border-b bg-[#FFF8F3] text-xs uppercase text-gray-500">
-                        <th className="px-3 py-3">Food</th>
-                        <th className="px-3 py-3">Category</th>
-                        <th className="px-3 py-3">Price</th>
-                        <th className="px-3 py-3">Status</th>
-                        <th className="px-3 py-3 text-right">Actions</th>
-                      </tr>
-                    </thead>
+              </td>
 
-                    <tbody>
-                      {filteredFoods.map((food) => (
-                        <tr
-                          key={food.id}
-                          className="border-b border-[#F4EAE4] transition hover:bg-[#FFFCFA]"
-                        >
-                          <td className="px-3 py-3">
-                            <div className="flex items-center gap-3">
-                              <img
-                                src={getImage(food.image_url)}
-                                alt={food.name}
-                                className="h-12 w-12 rounded-lg border border-[#F0E1D8] object-cover"
-                              onError={(e) => {
-  e.currentTarget.style.display = "none";
-}}
-                              />
-                              <span className="font-semibold">
-                                {food.name}
-                              </span>
-                            </div>
-                          </td>
+              <td className="px-3 py-3 text-gray-600">
+                {food.category_name}
+              </td>
 
-                          <td className="px-3 py-3 text-gray-600">
-                            {food.category_name}
-                          </td>
+              <td className="px-3 py-3 font-semibold">
+                {money(food.price)}
+              </td>
 
-                          <td className="px-3 py-3 font-semibold">
-                            {money(food.price)}
-                          </td>
+              <td className="px-3 py-3">
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                    Number(food.is_available)
+                      ? "bg-green-100 text-green-700"
+                      : "bg-red-100 text-red-600"
+                  }`}
+                >
+                  {Number(food.is_available) ? "Available" : "Unavailable"}
+                </span>
+              </td>
 
-                          <td className="px-3 py-3">
-                            <span
-                              className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                Number(food.is_available)
-                                  ? "bg-green-100 text-green-700"
-                                  : "bg-red-100 text-red-600"
-                              }`}
-                            >
-                              {Number(food.is_available)
-                                ? "Available"
-                                : "Unavailable"}
-                            </span>
-                          </td>
+              <td className="px-3 py-3">
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => openFoodModal(food)}
+                    title="Edit food"
+                    className="rounded-lg bg-[#FFF0D8] p-2 text-[#9B641D] transition-all duration-200 hover:scale-110 hover:bg-[#F8DDAF] active:scale-95"
+                  >
+                    <FiEdit2 />
+                  </button>
 
-                          <td className="px-3 py-3">
-                            <div className="flex justify-end gap-2">
-                              <button
-                                onClick={() => openFoodModal(food)}
-                                title="Edit food"
-                                className="rounded-lg bg-[#FFF0D8] p-2 text-[#9B641D] transition hover:bg-[#F8DDAF]"
-                              >
-                                <FiEdit2 />
-                              </button>
-
-                              <button
-                                onClick={() => deleteFood(food.id)}
-                                title="Delete food"
-                                className="rounded-lg bg-red-50 p-2 text-red-600 transition hover:bg-red-100"
-                              >
-                                <FiTrash2 />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <button
+                    onClick={() => deleteFood(food.id)}
+                    title="Delete food"
+                    className="rounded-lg bg-red-50 p-2 text-red-600 transition-all duration-200 hover:scale-110 hover:bg-red-100 active:scale-95"
+                  >
+                    <FiTrash2 />
+                  </button>
                 </div>
-              )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#F0E1D8] pt-4">
+      <p className="text-xs text-gray-500">
+        Showing {dashboardFoods.length} of {foods.length} food items
+      </p>
+
+      <Link
+        href="/admin/foods"
+        className="group inline-flex items-center gap-2 text-sm font-semibold text-[#8B4934] transition-all duration-300 hover:gap-3 hover:text-[#2C0E05]"
+      >
+        View All Foods
+        <FiEye className="transition-transform duration-300 group-hover:translate-x-1" />
+      </Link>
+    </div>
+  </>
+)}
+
             </div>
           </section>
 
@@ -773,6 +906,7 @@ console.log("CATEGORY API URL:", url);
           </section>
         </div>
       </main>
+      </div>
 
       {/* Notification */}
       {notice && (

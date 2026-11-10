@@ -79,7 +79,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }) {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[272px] flex-col border-r border-[#6A3825] bg-gradient-to-b from-[#35170D] via-[#2A1009] to-[#1F0B06] text-white shadow-2xl transition-transform duration-300 lg:sticky lg:top-0 lg:z-30 lg:h-screen lg:translate-x-0 lg:shadow-none ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-[272px] flex-col border-r border-[#6A3825] bg-gradient-to-b from-[#35170D] via-[#2A1009] to-[#1F0B06] text-white shadow-2xl transition-transform duration-300 lg:fixed lg:top-0 lg-left-0 lg:z-30 lg:h-screen lg:translate-x-0 lg:shadow-none ${
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
