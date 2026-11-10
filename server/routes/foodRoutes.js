@@ -98,9 +98,15 @@ router.post("/", verifyToken, adminOnly, async (req, res) => {
       id: result.insertId,
     });
   } catch (error) {
-    console.error("Food add error:", error);
-    res.status(500).json({ success: false, message: "Failed to add food" });
-  }
+  console.error("Food add error:", error);
+
+  res.status(500).json({
+    success: false,
+    message: "Failed to add food",
+    error: error.message,
+    code: error.code,
+  });
+}
 });
 
 // UPDATE food

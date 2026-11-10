@@ -1,21 +1,23 @@
+
 const db = require("./config/db");
 
-async function test() {
+async function checkDatabase() {
   try {
-    const [rows] = await db.query(
-      "SELECT id, name, description, image_url FROM categories ORDER BY id ASC"
-    );
+    const [database] = await db.query("SELECT DATABASE() AS db_name");
 
-    console.log("CATEGORY QUERY SUCCESS!");
-    console.log(rows);
+    console.log("Connected Database:", database[0].db_name);
+
+    const [foods] = await db.query("SHOW CREATE TABLE foods");
+    console.log("\nFOODS TABLE:\n", foods[0]["Create Table"]);
+
+    const [categories] = await db.query("SHOW CREATE TABLE categories");
+    console.log("\nCATEGORIES TABLE:\n", categories[0]["Create Table"]);
+
   } catch (error) {
-    console.log("CATEGORY QUERY FAILED!");
-    console.log("CODE:", error.code);
-    console.log("MESSAGE:", error.message);
-    console.log("SQL:", error.sql);
+    console.error("DATABASE CHECK ERROR:", error);
   } finally {
     await db.end();
   }
 }
 
-test();
+checkDatabase();
