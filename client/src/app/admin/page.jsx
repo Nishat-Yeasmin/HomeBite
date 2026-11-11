@@ -23,7 +23,7 @@ FiLogOut,
 FiChevronDown,
 } from "react-icons/fi";
 
-import Sidebar from "@/app/components/admin/Sidebar";
+// import Sidebar from "@/app/components/admin/Sidebar";
 
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -446,16 +446,18 @@ console.log("CATEGORY API URL:", url);
           }
         }
       `}</style>
-<div className="min-h-screen lg:pl-[272px]">
-      <Sidebar
+<div className="min-h-screen ">
+      {/* <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-      />
+      /> */}
 
       <main className="min-h-screen ">
         
         {/* Topbar */}
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#F0E1D8] bg-white/90 px-5 py-4 backdrop-blur-md md:px-8">
+        {/* <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#F0E1D8] bg-white/90 px-5 py-4 backdrop-blur-md md:px-8"> */}
+
+        <header className="fixed top-0 right-0 left-0 lg:left-[272px] z-40 flex h-[76px] items-center justify-between border-b border-[#F0E1D8] bg-white/95 px-5 backdrop-blur-md md:px-8">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
