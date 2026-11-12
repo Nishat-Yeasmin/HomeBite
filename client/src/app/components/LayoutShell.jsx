@@ -64,9 +64,10 @@ export default function LayoutShell({ children }) {
 
         <div className="min-h-screen ">
 
-          <AdminNavbar
-            onMenuClick={() => setSidebarOpen(true)}
-          />
+<AdminNavbar
+  onMenuClick={() => setSidebarOpen(true)}
+ 
+/>
 
           <main className="min-h-screen pt-[76px]">
             {children}

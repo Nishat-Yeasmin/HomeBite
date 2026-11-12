@@ -35,6 +35,7 @@ export default function FoodsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(null);
+ const [deleteTarget, setDeleteTarget] = useState(null);
 
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -127,12 +128,66 @@ export default function FoodsPage() {
     return () => observer.disconnect();
   }, [loading, foods, currentPage]);
 
+
+{/* Delete Confirmation Toast */}
+{deleteTarget && (
+  <div className="fixed right-5 top-5 z-[9999] w-[calc(100%-40px)] max-w-sm rounded-2xl border border-[#E8D5C9] bg-white p-5 shadow-2xl animate-[fadeUp_.3s_ease-out]">
+    <div className="flex items-start gap-3">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600">
+        <FiTrash2 size={20} />
+      </div>
+
+      <div className="flex-1">
+        <h3 className="font-bold text-[#2C0E05]">
+          Delete Food Item?
+        </h3>
+
+        <p className="mt-1 text-sm text-gray-500">
+          Are you sure you want to delete{" "}
+          <span className="font-semibold text-[#2C0E05]">
+            {deleteTarget.name}
+          </span>
+          ?
+        </p>
+      </div>
+
+      <button
+        onClick={() => setDeleteTarget(null)}
+        className="text-gray-400 hover:text-gray-700"
+        disabled={deleting !== null}
+      >
+        <FiX size={20} />
+      </button>
+    </div>
+
+    <div className="mt-5 flex justify-end gap-3">
+      <button
+        onClick={() => setDeleteTarget(null)}
+        disabled={deleting !== null}
+        className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+      >
+        Cancel
+      </button>
+
+  <button
+  onClick={() => setDeleteTarget(food)}
+  title="Delete food"
+  className="action-btn action-delete"
+>
+  <FiTrash2 />
+</button>
+    </div>
+  </div>
+)}
+
+
   // Notifications
   const showNotice = (message) => {
     setNotice(message);
     window.setTimeout(() => setNotice(""), 3500);
   };
 
+ 
   // Statistics
   const availableFoods = foods.filter(
     (food) => Number(food.is_available) === 1
@@ -319,18 +374,27 @@ export default function FoodsPage() {
         ? `${API_URL}/api/foods/${editingFood.id}`
         : `${API_URL}/api/foods`;
 
-      const response = await fetch(url, {
-        method: editingFood ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name.trim(),
-          category_id: Number(form.category_id),
-          description: form.description.trim(),
-          price: Number(form.price),
-          image_url: form.image_url.trim(),
-          is_available: form.is_available,
-        }),
-      });
+     const token = localStorage.getItem("homebite-token");
+
+if (!token) {
+  throw new Error("Please login first. Your login session may have expired.");
+}
+
+const response = await fetch(url, {
+  method: editingFood ? "PUT" : "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  },
+  body: JSON.stringify({
+    name: form.name.trim(),
+    category_id: Number(form.category_id),
+    description: form.description.trim(),
+    price: Number(form.price),
+    image_url: form.image_url.trim(),
+    is_available: form.is_available,
+  }),
+});
 
       const data = await response.json();
 
@@ -357,67 +421,88 @@ export default function FoodsPage() {
   };
 
   // Delete food
-  const handleDelete = async (food) => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete "${food.name}"?`
-      )
-    ) return;
+ 
+// Delete food
 
-    try {
-      setDeleting(food.id);
+const handleDelete = async (food) => {
+  try {
+    setDeleting(food.id);
 
-      const response = await fetch(
-        `${API_URL}/api/foods/${food.id}`,
-        { method: "DELETE" }
-      );
+    const token = localStorage.getItem("homebite-token");
 
-      const data = await response.json();
-
-      if (!response.ok || data.success === false) {
-        throw new Error(data.message || "Unable to delete food.");
-      }
-
-      await fetchData(true);
-      showNotice("Food deleted successfully!");
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setDeleting(null);
+    if (!token) {
+      throw new Error("Please login first.");
     }
-  };
+
+    const response = await fetch(
+      `${API_URL}/api/foods/${food.id}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || data.success === false) {
+      throw new Error(data.message || "Unable to delete food.");
+    }
+
+    setDeleteTarget(null);
+    await fetchData(true);
+    showNotice("Food deleted successfully!");
+  } catch (err) {
+    showNotice(err.message || "Unable to delete food.");
+  } finally {
+    setDeleting(null);
+  }
+};
+
 
   // Availability toggle
-  const toggleAvailability = async (food) => {
-    try {
-      const response = await fetch(
-        `${API_URL}/api/foods/${food.id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: food.name,
-            category_id: Number(food.category_id),
-            description: food.description || "",
-            price: Number(food.price),
-            image_url: food.image_url || "",
-            is_available: Number(food.is_available) !== 1,
-          }),
-        }
-      );
 
-      const data = await response.json();
+// Availability toggle
+const toggleAvailability = async (food) => {
+  try {
+    const token = localStorage.getItem("homebite-token");
 
-      if (!response.ok || data.success === false) {
-        throw new Error(data.message || "Availability update failed.");
-      }
-
-      await fetchData(true);
-      showNotice("Food availability updated!");
-    } catch (err) {
-      alert(err.message);
+    if (!token) {
+      throw new Error("Please login first. Your session may have expired.");
     }
-  };
+
+    const response = await fetch(
+      `${API_URL}/api/foods/${food.id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: food.name,
+          category_id: Number(food.category_id),
+          description: food.description || "",
+          price: Number(food.price),
+          image_url: food.image_url || "",
+          is_available: Number(food.is_available) !== 1,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || data.success === false) {
+      throw new Error(data.message || "Availability update failed.");
+    }
+
+    await fetchData(true);
+    showNotice("Food availability updated!");
+  } catch (err) {
+    alert(err.message);
+  }
+};
 
   const closeModal = () => {
     if (saving) return;
@@ -436,7 +521,7 @@ const resetFilters = () => {
 };
 
   return (
-    <div className="food-page min-h-screen overflow-hidden bg-[#FFF9F4] px-4 pb-10 pt-5 sm:px-6 lg:px-8 lg:pl-[280px]">
+    <div className="food-page min-h-screen overflow-hidden bg-[#FFF9F4] px-4 pb-10 pt-5 sm:px-6 lg:px-8 lg:pl-[290px]">
 
     {/* // <div className="food-page min-h-screen overflow-hidden bg-[#FFF9F4] px-4 pb-10 pt-5 sm:px-6 lg:px-8"> */}
 
@@ -523,6 +608,52 @@ const resetFilters = () => {
           {notice}
         </div>
       )}
+
+
+{/* Delete Confirmation Modal */}
+{deleteTarget && (
+  <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4">
+    <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+
+      <div className="flex items-center gap-3">
+        <div className="rounded-full bg-red-50 p-3 text-red-600">
+          <FiTrash2 size={22} />
+        </div>
+
+        <h3 className="text-lg font-bold text-[#2C0E05]">
+          Delete Food?
+        </h3>
+      </div>
+
+      <p className="mt-4 text-sm text-gray-600">
+        Are you sure you want to delete{" "}
+        <strong>{deleteTarget.name}</strong>?
+      </p>
+
+      <div className="mt-6 flex justify-end gap-3">
+        <button
+          type="button"
+          onClick={() => setDeleteTarget(null)}
+          disabled={deleting !== null}
+          className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleDelete(deleteTarget)}
+          disabled={deleting !== null}
+          className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+        >
+          {deleting !== null ? "Deleting..." : "Delete"}
+        </button>
+      </div>
+
+    </div>
+  </div>
+)}
+
 
       {/* Error */}
       {error && !modalOpen && (
@@ -898,7 +1029,7 @@ const resetFilters = () => {
                         </button>
 
                         <button
-                          onClick={() => handleDelete(food)}
+                          onClick={() => setDeleteTarget(food)}
                           disabled={deleting === food.id}
                           title="Delete food"
                           className="action-btn action-delete"
