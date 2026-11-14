@@ -9,11 +9,16 @@ const cors = require("cors");
 
 const db = require("./config/db");
 
+const path = require("path");
+
 const categoryRoutes = require("./routes/categoryRoutes");
 const foodRoutes = require("./routes/foodRoutes");
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const orderRoutes = require("./routes/orderRoutes");
+const wishlistRoutes = require("./routes/wishlistRoutes");
+const customerRoutes = require("./routes/customerRoutes");
+const customerOrderRoutes = require("./routes/customerOrderRoutes");
 
 
 const app = express();
@@ -52,12 +57,23 @@ app.get("/test-db", async (req, res) => {
   }
 });
 
+
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"))
+);
+
+
 // API Routes
 app.use("/api/categories", categoryRoutes);
 app.use("/api/foods", foodRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin/orders", orderRoutes);
+app.use("/api/wishlist", wishlistRoutes);
+app.use("/api/customer", customerRoutes);
+app.use("/api/customer/orders", customerOrderRoutes);
+
 
 // Start server
 if (require.main === module) {
