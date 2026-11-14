@@ -1,497 +1,468 @@
+
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  FiHome,
   FiShoppingBag,
   FiHeart,
-  FiUser,
-  FiSettings,
-  FiLogOut,
   FiClock,
-  FiCheckCircle,
-  FiTruck,
+  FiCreditCard,
   FiChevronRight,
   FiArrowUpRight,
   FiPackage,
   FiMapPin,
-  FiCreditCard,
   FiEdit3,
-  FiMenu,
-  FiX,
+  FiRefreshCw,
 } from "react-icons/fi";
 
-const orders = [
-  {
-    id: "#HB10245",
-    date: "Oct 08, 2026",
-    items: "Chicken Biryani × 2",
-    amount: "৳440",
-    status: "Delivered",
-    icon: FiCheckCircle,
-  },
-  {
-    id: "#HB10238",
-    date: "Oct 06, 2026",
-    items: "Chocolate Cake × 1",
-    amount: "৳650",
-    status: "On the way",
-    icon: FiTruck,
-  },
-  {
-    id: "#HB10221",
-    date: "Oct 03, 2026",
-    items: "Pitha Platter × 1",
-    amount: "৳280",
-    status: "Processing",
-    icon: FiClock,
-  },
-];
-
-const wishlist = [
-  {
-    name: "Homemade Chicken Biryani",
-    price: "৳220",
-    image:
-      "https://images.unsplash.com/photo-1719239885399-f87d992e0f18?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8Y2hpY2tlbiUyMGJpcml5YW5pfGVufDB8fDB8fHww",
-  },
-  {
-    name: "Chocolate Fudge Cake",
-    price: "৳650",
-    image:
-      "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=500&q=80",
-  },
-  {
-    name: "Traditional Pitha Platter",
-    price: "৳280",
-    image:
-      "https://images.unsplash.com/photo-1626132647523-66f5bf380027?auto=format&fit=crop&w=500&q=80",
-  },
-];
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+).replace(/\/$/, "");
 
 export default function DashboardPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [dashboard, setDashboard] = useState(null);
+  const [wishlist, setWishlist] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  return (
-    <main className="min-h-screen bg-[#FFF8F3] text-[#2C0E05]">
-      {/* Mobile Header */}
-      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-[#eadbd3] bg-[#FFF8F3]/95 px-5 py-4 backdrop-blur md:hidden">
-        <Link
-          href="/"
-          className="font-serif text-xl font-bold tracking-tight text-[#2C0E05]"
-        >
-          Home<span className="text-[#B08A55]">Bite</span>
-        </Link>
+
+async function readApiResponse(response, endpoint) {
+  const contentType = response.headers.get("content-type") || "";
+  const responseText = await response.text();
+
+  if (!contentType.includes("application/json")) {
+    throw new Error(
+      `API JSON দেয়নি। URL: ${endpoint} | Status: ${response.status}. Backend URL ও route check করো।`
+    );
+  }
+
+  let data;
+
+  try {
+    data = JSON.parse(responseText);
+  } catch {
+    throw new Error("Server থেকে invalid JSON response এসেছে।");
+  }
+
+  if (!response.ok || data.success === false) {
+    throw new Error(data.message || `Request failed: ${response.status}`);
+  }
+
+  return data;
+}
+
+async function loadDashboard() {
+  setLoading(true);
+  setError("");
+
+  const token = localStorage.getItem("homebite-token");
+
+  if (!token) {
+    window.location.href = "/login";
+    return;
+  }
+
+  try {
+    const headers = {
+      Authorization: `Bearer ${token}`,
+    };
+
+    const dashboardUrl = `${API_URL}/api/customer/dashboard`;
+    const wishlistUrl = `${API_URL}/api/wishlist`;
+
+    const [dashboardResponse, wishlistResponse] = await Promise.all([
+      fetch(dashboardUrl, { headers }),
+      fetch(wishlistUrl, { headers }),
+    ]);
+
+    if (dashboardResponse.status === 401) {
+      localStorage.removeItem("homebite-token");
+      localStorage.removeItem("homebite-user");
+      window.dispatchEvent(new Event("homebite-auth-changed"));
+      window.location.href = "/login";
+      return;
+    }
+
+    const dashboardData = await readApiResponse(
+      dashboardResponse,
+      dashboardUrl
+    );
+
+    setDashboard(dashboardData);
+
+    if (wishlistResponse.ok) {
+      const wishlistData = await readApiResponse(
+        wishlistResponse,
+        wishlistUrl
+      );
+
+      setWishlist(
+        Array.isArray(wishlistData)
+          ? wishlistData
+          : wishlistData.wishlist || wishlistData.items || []
+      );
+    } else {
+      setWishlist([]);
+    }
+  } catch (err) {
+    console.error("Dashboard loading error:", err);
+    setError(err.message || "Something went wrong");
+  } finally {
+    setLoading(false);
+  }
+}
+
+
+  useEffect(() => {
+    loadDashboard();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[65vh] items-center justify-center">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-[#F3E3DC] border-t-[#B08A55]" />
+          <p className="text-sm text-[#806d66]">
+            Loading your dashboard...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-2xl px-5 py-16 text-center">
+        <h2 className="font-serif text-2xl font-bold">
+          Dashboard could not be loaded
+        </h2>
+
+        <p className="mt-3 text-sm text-[#806d66]">{error}</p>
 
         <button
-          onClick={() => setSidebarOpen(true)}
-          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl bg-[#2C0E05] text-white"
+          onClick={loadDashboard}
+          className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#2C0E05] px-5 py-3 text-sm font-semibold text-white hover:bg-[#4a1b0e]"
         >
-          <FiMenu size={20} />
+          <FiRefreshCw />
+          Try Again
         </button>
       </div>
+    );
+  }
 
-      <div className="mx-auto flex max-w-[1500px]">
-        {/* Overlay */}
-        {sidebarOpen && (
-          <div
-            onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 z-40 bg-black/40 md:hidden"
-          />
-        )}
+  const user = dashboard?.user || {};
+  const stats = dashboard?.stats || {};
+  const orders = dashboard?.recentOrders || [];
 
-        {/* Sidebar */}
-        <aside
-          className={`fixed left-0 top-0 z-50 flex h-screen w-[270px] flex-col border-r border-[#eadbd3] bg-[#fffaf7] px-6 py-7 transition-transform duration-300 md:sticky md:z-30 md:translate-x-0 ${
-            sidebarOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
+  const latestOrder = orders[0];
+
+  const formatMoney = (amount) =>
+    `৳${Number(amount || 0).toLocaleString("en-BD")}`;
+
+  const formatDate = (date) =>
+    date
+      ? new Date(date).toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        })
+      : "—";
+
+  return (
+    <div className="mx-auto max-w-[1500px] px-5 pb-12 sm:px-8 lg:px-10">
+      {/* Top bar */}
+      <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
+        <div>
+          <p className="mb-1 text-sm font-medium text-[#B08A55]">
+            {new Date().toLocaleDateString("en-US", {
+              weekday: "long",
+              month: "long",
+              day: "2-digit",
+              year: "numeric",
+            })}
+          </p>
+
+          <h1 className="font-serif text-3xl font-bold sm:text-4xl">
+            Welcome back, {user.name?.split(" ")[0] || "Food Lover"}!
+          </h1>
+
+          <p className="mt-2 text-sm text-[#806d66]">
+            Here’s what’s happening with your HomeBite account.
+          </p>
+        </div>
+
+        <Link
+          href="/menu"
+          className="group flex w-fit items-center gap-2 rounded-xl border border-[#d8c5bc] bg-white px-5 py-3 text-sm font-semibold transition hover:-translate-y-1 hover:border-[#B08A55] hover:shadow-lg"
         >
-          {/* Close mobile */}
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="absolute right-5 top-5 flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg bg-[#F3E3DC] md:hidden"
-          >
-            <FiX size={18} />
-          </button>
+          Order something delicious
+          <FiArrowUpRight className="transition group-hover:translate-x-1 group-hover:-translate-y-1" />
+        </Link>
+      </div>
 
-          {/* Logo */}
+      {/* Welcome Banner */}
+      <div className="relative mb-8 overflow-hidden rounded-[28px] bg-gradient-to-r from-[#2C0E05] via-[#472016] to-[#6b3826] p-7 text-white shadow-xl sm:p-9">
+        <div className="relative z-10 max-w-xl">
+          <span className="mb-3 inline-flex rounded-full border border-[#d6b88d]/30 bg-white/10 px-3 py-1 text-xs font-medium text-[#e8cfaa]">
+            ✦ HomeBite Member
+          </span>
+
+          <h2 className="font-serif text-2xl font-bold leading-tight sm:text-3xl">
+            Good food is always
+            <br />
+            a good idea.
+          </h2>
+
+          <p className="mt-3 max-w-md text-sm leading-6 text-white/70">
+            Discover homemade meals, sweet treats and comfort food made
+            with care.
+          </p>
+
           <Link
-            href="/"
-            className="mb-12 font-serif text-2xl font-bold tracking-tight"
+            href="/menu"
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#F3E3DC] px-5 py-3 text-sm font-semibold text-[#2C0E05] transition hover:bg-white"
           >
-            Home<span className="text-[#B08A55]">Bite</span>
+            Explore Menu
+            <FiChevronRight />
           </Link>
+        </div>
 
-          {/* User mini profile */}
-          <div className="mb-8 flex items-center gap-3 rounded-2xl bg-[#F3E3DC]/70 p-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#2C0E05] font-serif text-lg font-bold text-[#F3E3DC]">
-              N
+        <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full border border-white/10" />
+        <div className="absolute -bottom-28 right-20 h-56 w-56 rounded-full border border-[#d6b88d]/10" />
+
+        <div className="absolute bottom-[-25px] right-[-15px] hidden rotate-[-8deg] text-[150px] opacity-10 lg:block">
+          🍰
+        </div>
+      </div>
+
+      {/* Statistics */}
+      <div className="mb-8 grid grid-cols-2 gap-4 xl:grid-cols-4">
+        <StatCard
+          icon={<FiShoppingBag />}
+          title="Total Orders"
+          value={stats.totalOrders || 0}
+          subtitle="All your orders"
+        />
+
+        <StatCard
+          icon={<FiClock />}
+          title="Active Orders"
+          value={stats.activeOrders || 0}
+          subtitle="Not delivered or cancelled"
+        />
+
+        <StatCard
+          icon={<FiHeart />}
+          title="Wishlist"
+          value={stats.wishlistCount || 0}
+          subtitle="Your saved foods"
+        />
+
+        <StatCard
+          icon={<FiCreditCard />}
+          title="Total Spent"
+          value={formatMoney(stats.totalSpent)}
+          subtitle="Across all orders"
+        />
+      </div>
+
+      {/* Recent Orders + Profile */}
+      <div className="grid gap-7 xl:grid-cols-[1.5fr_1fr]">
+        <div className="rounded-[26px] border border-[#eadbd3] bg-white p-5 shadow-sm sm:p-6">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h3 className="font-serif text-xl font-bold">
+                Recent Orders
+              </h3>
+              <p className="mt-1 text-xs text-[#8a7871]">
+                Your latest food orders
+              </p>
+            </div>
+
+            <Link
+              href="/dashboard/orders"
+              className="flex items-center gap-1 text-xs font-semibold text-[#B08A55] hover:underline"
+            >
+              View all <FiChevronRight />
+            </Link>
+          </div>
+
+          {orders.length === 0 ? (
+            <EmptyState
+              text="You haven't placed any orders yet."
+              href="/menu"
+              action="Explore Menu"
+            />
+          ) : (
+            <div className="space-y-3">
+              {orders.map((order) => (
+                <OrderRow
+                  key={order.id}
+                  order={order}
+                  formatMoney={formatMoney}
+                  formatDate={formatDate}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Profile */}
+        <div className="rounded-[26px] border border-[#eadbd3] bg-[#F3E3DC]/60 p-6">
+          <div className="mb-6 flex items-center justify-between">
+            <h3 className="font-serif text-xl font-bold">Profile</h3>
+
+            <Link
+              href="/dashboard/profile"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#2C0E05] transition hover:bg-[#2C0E05] hover:text-white"
+              aria-label="Edit profile"
+            >
+              <FiEdit3 size={15} />
+            </Link>
+          </div>
+
+          <div className="mb-6 flex items-center gap-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#2C0E05] font-serif text-2xl font-bold text-[#F3E3DC]">
+              {(user.name || user.email || "U").charAt(0).toUpperCase()}
             </div>
 
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">Nishat Nisha</p>
-              <p className="truncate text-xs text-[#806d66]">Food lover</p>
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <nav className="space-y-2">
-            <SidebarLink
-              icon={<FiHome />}
-              label="Overview"
-              active
-              href="/dashboard"
-            />
-
-            <SidebarLink
-              icon={<FiShoppingBag />}
-              label="My Orders"
-              href="/dashboard/orders"
-            />
-
-            <SidebarLink
-              icon={<FiHeart />}
-              label="Wishlist"
-              href="/dashboard/wishlist"
-            />
-
-            <SidebarLink
-              icon={<FiUser />}
-              label="My Profile"
-              href="/dashboard/profile"
-            />
-
-            <SidebarLink
-              icon={<FiSettings />}
-              label="Settings"
-              href="/dashboard/settings"
-            />
-          </nav>
-
-          <div className="mt-auto">
-            <Link
-              href="/menu"
-              className="mb-4 flex items-center justify-center gap-2 rounded-xl bg-[#2C0E05] px-4 py-3 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
-            >
-              <FiShoppingBag />
-              Browse Menu
-            </Link>
-
-            <button className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-[#7b6b65] transition hover:bg-[#F3E3DC] hover:text-[#2C0E05]">
-              <FiLogOut />
-              Logout
-            </button>
-          </div>
-        </aside>
-
-        {/* Main */}
-        <section className="min-w-0 flex-1 px-5 py-7 sm:px-8 lg:px-10 lg:py-10">
-          {/* Top bar */}
-          <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
-            <div>
-              <p className="mb-1 text-sm font-medium text-[#B08A55]">
-                Thursday, October 08, 2026
-              </p>
-
-              <h1 className="font-serif text-3xl font-bold sm:text-4xl">
-                Welcome back, Nishat!
-              </h1>
-
-              <p className="mt-2 text-sm text-[#806d66]">
-                Here’s what’s happening with your HomeBite account.
+              <h4 className="truncate font-semibold">
+                {user.name || "Customer"}
+              </h4>
+              <p className="truncate text-xs text-[#806d66]">
+                {user.email || "—"}
               </p>
             </div>
-
-            <Link
-              href="/menu"
-              className="group flex w-fit items-center gap-2 rounded-xl border border-[#d8c5bc] bg-white px-5 py-3 text-sm font-semibold transition-all duration-300 hover:-translate-y-1 hover:border-[#B08A55] hover:shadow-lg"
-            >
-              Order something delicious
-              <FiArrowUpRight className="transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
-            </Link>
           </div>
 
-          {/* Welcome Banner */}
-          <div className="relative mb-8 overflow-hidden rounded-[28px] bg-gradient-to-r from-[#2C0E05] via-[#472016] to-[#6b3826] p-7 text-white shadow-xl sm:p-9">
-            <div className="relative z-10 max-w-xl">
-              <span className="mb-3 inline-flex rounded-full border border-[#d6b88d]/30 bg-white/10 px-3 py-1 text-xs font-medium text-[#e8cfaa]">
-                ✦ HomeBite Member
-              </span>
-
-              <h2 className="font-serif text-2xl font-bold leading-tight sm:text-3xl">
-                Good food is always
-                <br />
-                a good idea.
-              </h2>
-
-              <p className="mt-3 max-w-md text-sm leading-6 text-white/70">
-                Discover homemade meals, sweet treats and comfort food made
-                with care.
-              </p>
-
-              <Link
-                href="/menu"
-                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#F3E3DC] px-5 py-3 text-sm font-semibold text-[#2C0E05] transition hover:bg-white"
-              >
-                Explore Menu
-                <FiChevronRight />
-              </Link>
-            </div>
-
-            {/* Decorative circles */}
-            <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full border border-white/10" />
-            <div className="absolute -bottom-28 right-20 h-56 w-56 rounded-full border border-[#d6b88d]/10" />
-
-            <div className="absolute bottom-[-25px] right-[-15px] hidden rotate-[-8deg] text-[150px] opacity-10 lg:block">
-              🍰
-            </div>
-          </div>
-
-          {/* Statistics */}
-          <div className="mb-8 grid grid-cols-2 gap-4 xl:grid-cols-4">
-            <StatCard
-              icon={<FiShoppingBag />}
-              title="Total Orders"
-              value="24"
-              change="+12%"
-              subtitle="from last month"
+          <div className="space-y-3">
+            <ProfileInfo
+              icon={<FiMapPin />}
+              label="Latest Delivery Address"
+              value={latestOrder?.delivery_address || "Not available yet"}
             />
 
-            <StatCard
-              icon={<FiClock />}
-              title="Pending Orders"
-              value="02"
-              change="Active"
-              subtitle="right now"
-            />
-
-            <StatCard
-              icon={<FiHeart />}
-              title="Wishlist"
-              value="08"
-              change="+2"
-              subtitle="this month"
-            />
-
-            <StatCard
+            <ProfileInfo
               icon={<FiCreditCard />}
-              title="Total Spent"
-              value="৳8,420"
-              change="+8%"
-              subtitle="from last month"
+              label="Latest Payment Method"
+              value={latestOrder?.payment_method || "Not available yet"}
             />
-          </div>
 
-          {/* Content Grid */}
-          <div className="grid gap-7 xl:grid-cols-[1.5fr_1fr]">
-            {/* Recent Orders */}
-            <div className="rounded-[26px] border border-[#eadbd3] bg-white p-5 shadow-sm sm:p-6">
-              <div className="mb-6 flex items-center justify-between">
-                <div>
-                  <h3 className="font-serif text-xl font-bold">
-                    Recent Orders
-                  </h3>
-                  <p className="mt-1 text-xs text-[#8a7871]">
-                    Your latest food orders
-                  </p>
-                </div>
-
-                <Link
-                  href="/dashboard/orders"
-                  className="flex items-center gap-1 text-xs font-semibold text-[#B08A55] hover:underline"
-                >
-                  View all
-                  <FiChevronRight />
-                </Link>
-              </div>
-
-              <div className="space-y-3">
-                {orders.map((order) => (
-                  <OrderRow key={order.id} order={order} />
-                ))}
-              </div>
-            </div>
-
-            {/* Profile */}
-            <div className="rounded-[26px] border border-[#eadbd3] bg-[#F3E3DC]/60 p-6">
-              <div className="mb-6 flex items-center justify-between">
-                <h3 className="font-serif text-xl font-bold">
-                  Profile
-                </h3>
-
-                <Link
-                  href="/dashboard/profile"
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#2C0E05] transition hover:bg-[#2C0E05] hover:text-white"
-                >
-                  <FiEdit3 size={15} />
-                </Link>
-              </div>
-
-              <div className="mb-6 flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#2C0E05] font-serif text-2xl font-bold text-[#F3E3DC]">
-                  N
-                </div>
-
-                <div>
-                  <h4 className="font-semibold">Nishat Yeasmin</h4>
-                  <p className="text-xs text-[#806d66]">
-                    nishat@example.com
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <ProfileInfo
-                  icon={<FiMapPin />}
-                  label="Delivery Address"
-                  value="Sylhet, Bangladesh"
-                />
-
-                <ProfileInfo
-                  icon={<FiCreditCard />}
-                  label="Preferred Payment"
-                  value="Cash on Delivery"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Wishlist */}
-          <div className="mt-7 rounded-[26px] border border-[#eadbd3] bg-white p-5 shadow-sm sm:p-6">
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h3 className="font-serif text-xl font-bold">
-                  From Your Wishlist
-                </h3>
-                <p className="mt-1 text-xs text-[#8a7871]">
-                  Your saved favorites, ready whenever you are.
-                </p>
-              </div>
-
-              <Link
-                href="/dashboard/wishlist"
-                className="hidden items-center gap-1 text-xs font-semibold text-[#B08A55] hover:underline sm:flex"
-              >
-                View wishlist
-                <FiChevronRight />
-              </Link>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {wishlist.map((item) => (
-                <WishlistCard key={item.name} item={item} />
-              ))}
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="mt-7 grid gap-4 sm:grid-cols-3">
-            <QuickAction
-              href="/menu"
+            <ProfileInfo
               icon={<FiShoppingBag />}
-              title="Order Food"
-              text="Explore our homemade menu"
-            />
-
-            <QuickAction
-              href="/offers"
-              icon={<FiPackage />}
-              title="Today's Offers"
-              text="Save more on your favorites"
-            />
-
-            <QuickAction
-              href="/dashboard/orders"
-              icon={<FiTruck />}
-              title="Track Order"
-              text="Check your active delivery"
+              label="Phone"
+              value={user.phone || "Not added"}
             />
           </div>
+        </div>
+      </div>
 
-          {/* Footer note */}
-          <div className="mt-10 border-t border-[#eadbd3] pt-6 text-center">
-            <p className="text-xs text-[#927e76]">
-              Made with care by HomeBite · Homemade goodness, delivered with
-              love.
+      {/* Wishlist */}
+      <div className="mt-7 rounded-[26px] border border-[#eadbd3] bg-white p-5 shadow-sm sm:p-6">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h3 className="font-serif text-xl font-bold">
+              From Your Wishlist
+            </h3>
+            <p className="mt-1 text-xs text-[#8a7871]">
+              Your saved favorites, ready whenever you are.
             </p>
           </div>
-        </section>
-      </div>
-    </main>
-  );
-}
 
-/* Sidebar Link */
-function SidebarLink({ icon, label, href, active }) {
-  return (
-    <Link
-      href={href}
-      className={`group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 ${
-        active
-          ? "bg-[#2C0E05] text-white shadow-md"
-          : "text-[#75645e] hover:translate-x-1 hover:bg-[#F3E3DC] hover:text-[#2C0E05]"
-      }`}
-    >
-      <span
-        className={`text-lg ${
-          active
-            ? "text-[#e8cfaa]"
-            : "text-[#9a847b] group-hover:text-[#B08A55]"
-        }`}
-      >
-        {icon}
-      </span>
-      {label}
-    </Link>
-  );
-}
-
-/* Stat Card */
-function StatCard({ icon, title, value, change, subtitle }) {
-  return (
-    <div className="group rounded-[22px] border border-[#eadbd3] bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-      <div className="mb-5 flex items-start justify-between">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F3E3DC] text-[#2C0E05] transition-all duration-300 group-hover:rotate-6 group-hover:bg-[#2C0E05] group-hover:text-white">
-          {icon}
+          <Link
+            href="/dashboard/wishlist"
+            className="hidden items-center gap-1 text-xs font-semibold text-[#B08A55] hover:underline sm:flex"
+          >
+            View wishlist <FiChevronRight />
+          </Link>
         </div>
 
-        <span className="rounded-full bg-[#f5efe9] px-2.5 py-1 text-[10px] font-semibold text-[#B08A55]">
-          {change}
-        </span>
+        {wishlist.length === 0 ? (
+          <EmptyState
+            text="Your wishlist is empty. Save your favorite foods here."
+            href="/menu"
+            action="Browse Foods"
+          />
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {wishlist.slice(0, 3).map((item) => (
+              <WishlistCard
+                key={item.id || item.food_id}
+                item={item}
+                formatMoney={formatMoney}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="mt-7 grid gap-4 sm:grid-cols-3">
+        <QuickAction
+          href="/menu"
+          icon={<FiShoppingBag />}
+          title="Order Food"
+          text="Explore our homemade menu"
+        />
+
+        <QuickAction
+          href="/offers"
+          icon={<FiPackage />}
+          title="Today's Offers"
+          text="Save more on your favorites"
+        />
+
+        <QuickAction
+          href="/dashboard/orders"
+          icon={<FiClock />}
+          title="Track Order"
+          text="Check your active delivery"
+        />
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ icon, title, value, subtitle }) {
+  return (
+    <div className="group rounded-[22px] border border-[#eadbd3] bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+      <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl bg-[#F3E3DC] text-[#2C0E05] transition group-hover:bg-[#2C0E05] group-hover:text-white">
+        {icon}
       </div>
 
       <p className="text-xs text-[#8a7871]">{title}</p>
-
-      <div className="mt-1 flex items-end gap-2">
-        <span className="font-serif text-2xl font-bold">{value}</span>
-      </div>
-
+      <p className="mt-1 break-words font-serif text-2xl font-bold">
+        {value}
+      </p>
       <p className="mt-1 text-[10px] text-[#a09089]">{subtitle}</p>
     </div>
   );
 }
 
-/* Order Row */
-function OrderRow({ order }) {
-  const StatusIcon = order.icon;
+function OrderRow({ order, formatMoney, formatDate }) {
+  const status = order.order_status || "Processing";
+  const normalized = status.toLowerCase();
 
   const statusStyle =
-    order.status === "Delivered"
+    normalized === "delivered"
       ? "bg-[#edf5ed] text-[#557357]"
-      : order.status === "On the way"
+      : normalized.includes("cancel")
+      ? "bg-red-50 text-red-600"
+      : normalized.includes("way") || normalized.includes("transit")
       ? "bg-[#fff5df] text-[#9a702e]"
       : "bg-[#f5e9e4] text-[#8a4938]";
 
   return (
-    <div className="group flex flex-col gap-4 rounded-2xl border border-[#eee2dc] p-4 transition-all duration-300 hover:border-[#d7c0b5] hover:bg-[#fffaf7] sm:flex-row sm:items-center">
-      <div className="flex flex-1 items-center gap-3">
+    <div className="flex flex-col gap-4 rounded-2xl border border-[#eee2dc] p-4 transition hover:border-[#d7c0b5] hover:bg-[#fffaf7] sm:flex-row sm:items-center">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#F3E3DC] text-[#2C0E05]">
           <FiPackage />
         </div>
 
         <div className="min-w-0">
-          <p className="text-sm font-semibold">{order.id}</p>
+          <p className="text-sm font-semibold">Order #HB{order.id}</p>
           <p className="mt-1 truncate text-xs text-[#897871]">
             {order.items}
           </p>
@@ -500,24 +471,24 @@ function OrderRow({ order }) {
 
       <div className="flex items-center justify-between gap-4 sm:justify-end">
         <div className="text-left sm:text-right">
-          <p className="text-sm font-bold">{order.amount}</p>
+          <p className="text-sm font-bold">
+            {formatMoney(order.total_amount)}
+          </p>
           <p className="mt-1 text-[10px] text-[#a09089]">
-            {order.date}
+            {formatDate(order.created_at)}
           </p>
         </div>
 
         <span
-          className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-semibold ${statusStyle}`}
+          className={`rounded-full px-3 py-1.5 text-[10px] font-semibold ${statusStyle}`}
         >
-          <StatusIcon size={12} />
-          {order.status}
+          {status}
         </span>
       </div>
     </div>
   );
 }
 
-/* Profile Info */
 function ProfileInfo({ icon, label, value }) {
   return (
     <div className="flex items-center gap-3 rounded-xl bg-white/70 p-3">
@@ -533,50 +504,72 @@ function ProfileInfo({ icon, label, value }) {
   );
 }
 
-/* Wishlist */
-function WishlistCard({ item }) {
-  return (
-    <div className="group overflow-hidden rounded-2xl border border-[#eee2dc] bg-[#fffaf7] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-      <div className="relative h-40 overflow-hidden">
-        <img
-          src={item.image}
-          alt={item.name}
-          className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
-        />
+function WishlistCard({ item, formatMoney }) {
+  const name = item.name || item.food_name || "Homemade Food";
+  const image = item.image_url || item.food_image || item.image;
+  const price = item.price ?? item.food_price;
 
-        <div className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-[#9b4339] shadow-sm">
-          <FiHeart size={14} fill="currentColor" />
-        </div>
+  return (
+    <div className="group overflow-hidden rounded-2xl border border-[#eee2dc] bg-[#fffaf7] transition hover:-translate-y-1 hover:shadow-lg">
+      <div className="h-40 overflow-hidden bg-[#F3E3DC]">
+        {image ? (
+          <img
+            src={image}
+            alt={name}
+            className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center text-4xl">
+            🍰
+          </div>
+        )}
       </div>
 
       <div className="p-4">
         <div className="flex items-center justify-between gap-3">
-          <h4 className="line-clamp-1 text-sm font-semibold">
-            {item.name}
-          </h4>
+          <h4 className="line-clamp-1 text-sm font-semibold">{name}</h4>
 
-          <span className="shrink-0 text-sm font-bold text-[#B08A55]">
-            {item.price}
-          </span>
+          {price != null && (
+            <span className="shrink-0 text-sm font-bold text-[#B08A55]">
+              {formatMoney(price)}
+            </span>
+          )}
         </div>
 
-        <button className="mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#2C0E05] py-2.5 text-xs font-semibold text-white transition hover:bg-[#4a1b0e]">
+        <Link
+          href="/menu"
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#2C0E05] py-2.5 text-xs font-semibold text-white transition hover:bg-[#4a1b0e]"
+        >
           <FiShoppingBag size={13} />
-          Add to Cart
-        </button>
+          Explore Menu
+        </Link>
       </div>
     </div>
   );
 }
 
-/* Quick Action */
+function EmptyState({ text, href, action }) {
+  return (
+    <div className="rounded-2xl border border-dashed border-[#ddc9bf] bg-[#fffaf7] px-5 py-9 text-center">
+      <p className="text-sm text-[#806d66]">{text}</p>
+
+      <Link
+        href={href}
+        className="mt-4 inline-flex rounded-xl bg-[#2C0E05] px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-[#4a1b0e]"
+      >
+        {action}
+      </Link>
+    </div>
+  );
+}
+
 function QuickAction({ href, icon, title, text }) {
   return (
     <Link
       href={href}
-      className="group flex items-center gap-4 rounded-[20px] border border-[#eadbd3] bg-white p-5 transition-all duration-300 hover:-translate-y-1 hover:border-[#cdb09f] hover:shadow-lg"
+      className="group flex items-center gap-4 rounded-[20px] border border-[#eadbd3] bg-white p-5 transition hover:-translate-y-1 hover:border-[#cdb09f] hover:shadow-lg"
     >
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#F3E3DC] text-[#2C0E05] transition-all duration-300 group-hover:bg-[#2C0E05] group-hover:text-white">
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#F3E3DC] text-[#2C0E05] transition group-hover:bg-[#2C0E05] group-hover:text-white">
         {icon}
       </div>
 
@@ -585,7 +578,7 @@ function QuickAction({ href, icon, title, text }) {
         <p className="mt-1 truncate text-xs text-[#8a7871]">{text}</p>
       </div>
 
-      <FiChevronRight className="text-[#B08A55] transition-transform duration-300 group-hover:translate-x-1" />
+      <FiChevronRight className="text-[#B08A55] transition group-hover:translate-x-1" />
     </Link>
   );
 }
