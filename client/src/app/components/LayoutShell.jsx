@@ -23,33 +23,44 @@ export default function LayoutShell({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [customer, setCustomer] = useState(null);
 
-  // Customer information for sidebar
-  useEffect(() => {
-    const updateCustomer = () => {
-      const savedUser = localStorage.getItem("homebite-user");
-      const token = localStorage.getItem("homebite-token");
+// Customer information for sidebar
+useEffect(() => {
+  const updateCustomer = () => {
+    const savedUser = localStorage.getItem("homebite-user");
+    const token = localStorage.getItem("homebite-token");
 
-      if (savedUser && token) {
-        try {
-          setCustomer(JSON.parse(savedUser));
-        } catch {
-          setCustomer(null);
-        }
-      } else {
+    if (savedUser && token) {
+      try {
+        setCustomer(JSON.parse(savedUser));
+      } catch {
         setCustomer(null);
       }
-    };
+    } else {
+      setCustomer(null);
+    }
+  };
 
-    updateCustomer();
+  const handleProfileUpdate = (event) => {
+    if (event.detail) {
+      setCustomer(event.detail);
+    } else {
+      updateCustomer();
+    }
+  };
 
-    window.addEventListener("homebite-auth-changed", updateCustomer);
-    window.addEventListener("storage", updateCustomer);
+  updateCustomer();
 
-    return () => {
-      window.removeEventListener("homebite-auth-changed", updateCustomer);
-      window.removeEventListener("storage", updateCustomer);
-    };
-  }, []);
+  window.addEventListener("homebite-auth-changed", updateCustomer);
+  window.addEventListener("storage", updateCustomer);
+  window.addEventListener("homebite-profile-updated", handleProfileUpdate);
+
+  return () => {
+    window.removeEventListener("homebite-auth-changed", updateCustomer);
+    window.removeEventListener("storage", updateCustomer);
+    window.removeEventListener("homebite-profile-updated", handleProfileUpdate);
+  };
+}, []);
+
 
   // Close sidebar when route changes
   useEffect(() => {

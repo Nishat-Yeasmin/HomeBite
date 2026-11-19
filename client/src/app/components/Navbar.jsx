@@ -23,6 +23,18 @@ export default function Navbar() {
 const [user, setUser] = useState(null);
 const isLoggedIn = Boolean(user);
 
+
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+).replace(/\/$/, "");
+
+const profileImageUrl = user?.profile_image
+  ? user.profile_image.startsWith("http")
+    ? user.profile_image
+    : `${API_URL}${user.profile_image}`
+  : "";
+
+
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 const [cartCount, setCartCount] = useState(0);
 
@@ -50,10 +62,16 @@ const [cartCount, setCartCount] = useState(0);
     updateAuth();
 
     window.addEventListener("homebite-auth-changed", updateAuth);
+
+    window.addEventListener("homebite-profile-updated", updateAuth);
+
     window.addEventListener("storage", updateAuth);
 
     return () => {
       window.removeEventListener("homebite-auth-changed", updateAuth);
+
+      window.removeEventListener("homebite-profile-updated", updateAuth);
+      
       window.removeEventListener("storage", updateAuth);
     };
   }, []);
@@ -278,16 +296,26 @@ function handleLogout() {
                     onClick={() => setIsProfileOpen(!isProfileOpen)}
                     className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full hover:bg-orange-200 dark:hover:bg-gray-800 transition-all duration-200 cursor-pointer"
                   >
-                    <div
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-semibold"
-                      style={{
-                        background: gradient,
-                      }}
-                    >
-                     {(user?.name || user?.email || "U")
-  .charAt(0)
-  .toUpperCase()}
-                    </div>
+                <div
+  className="w-7 h-7 shrink-0 rounded-full overflow-hidden flex items-center justify-center text-white text-xs font-semibold border border-[#c49b62]/50"
+  style={{ background: gradient }}
+>
+  {profileImageUrl ? (
+  <img
+    src={profileImageUrl}
+    alt="Profile"
+    className="w-full h-full object-cover"
+  />
+) : (
+    (user?.name || user?.email || "U")
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase()
+  )}
+</div>
 
                     <span className="hidden sm:block text-sm font-medium text-gray-700 dark:text-gray-200">
                      {user?.name || user?.email?.split("@")[0] || "User"}
@@ -299,7 +327,7 @@ function handleLogout() {
                     <div className="absolute right-0 mt-3 w-48 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden z-50">
 
                       <Link
-                        href="/profile"
+                        href="/dashboard/profile"
                         className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-[#F8EEEA] dark:hover:bg-gray-700/50 hover:text-[#5A2D1F] transition-all cursor-pointer"
                       >
                         <FiUser size={15} />

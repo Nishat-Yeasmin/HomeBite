@@ -1,0 +1,253 @@
+
+.hb-reviews-page {
+  --hb-dark: #2c0e05;
+  --hb-brown: #542416;
+  --hb-gold: #b08a55;
+  --hb-cream: #fff8f3;
+  --hb-muted: #987c70;
+
+  width: 100%;
+  max-width: 1500px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 12px 24px 55px;
+  color: var(--hb-dark);
+}
+
+/* HERO */
+.hb-reviews-page .hb-hero {
+  position: relative;
+  min-height: 275px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  overflow: hidden;
+  padding: 38px 48px;
+  margin-bottom: 28px;
+  border: 1px solid #e8d5bd;
+  border-radius: 22px;
+  background: radial-gradient(circle at 85% 20%, rgba(213,177,126,.28), transparent 30%),
+    linear-gradient(115deg, #fff8f0, #f5e8d9 55%, #ead5bb);
+  box-shadow: 0 10px 30px rgba(66,35,17,.07);
+}
+
+.hb-reviews-page .hb-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 650px;
+}
+
+.hb-reviews-page .hb-hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #956b36;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  margin-bottom: 15px;
+}
+
+.hb-reviews-page .hb-hero h1 {
+  margin: 0;
+  color: #2c0e05;
+  font-size: clamp(30px, 3.2vw, 43px);
+  line-height: 1.2;
+  font-weight: 850;
+}
+
+.hb-reviews-page .hb-hero h1 span {
+  color: #a47743;
+}
+
+.hb-reviews-page .hb-hero-content > p {
+  max-width: 570px;
+  margin: 14px 0 20px;
+  color: #765c4b;
+  font-size: 15px;
+  line-height: 1.85;
+}
+
+.hb-reviews-page .hb-hero-bottom {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.hb-reviews-page .hb-hero-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 21px;
+  border: 0;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #3a160b, #80502d);
+  color: white;
+  font-size: 14px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: .3s ease;
+}
+
+.hb-reviews-page .hb-hero-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 22px rgba(44,14,5,.2);
+}
+
+.hb-reviews-page .hb-hero-btn:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.hb-reviews-page .hb-hero-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #80634f;
+  font-size: 13px;
+}
+
+.hb-reviews-page .hb-hero-note strong {
+  color: #3a160b;
+  font-size: 15px;
+}
+
+.hb-reviews-page .hb-hero-decoration {
+  position: relative;
+  width: 230px;
+  height: 210px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+
+.hb-reviews-page .hb-hero-circle {
+  position: relative;
+  z-index: 2;
+  width: 155px;
+  height: 155px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #fff7ed;
+  background: linear-gradient(145deg, #71472b, #2c0e05);
+  border: 7px solid rgba(255,255,255,.55);
+  box-shadow: 0 12px 30px rgba(44,14,5,.2);
+}
+
+.hb-reviews-page .hb-hero-stars {
+  color: #e7bd76;
+  font-size: 16px;
+  letter-spacing: 3px;
+}
+
+.hb-reviews-page .hb-hero-circle span {
+  font-size: 12px;
+  color: #f4dfc4;
+}
+
+.hb-reviews-page .hb-hero-orbit {
+  position: absolute;
+  border: 1px solid rgba(143,98,52,.28);
+  border-radius: 50%;
+}
+
+.hb-reviews-page .hb-orbit-one {
+  width: 195px;
+  height: 195px;
+}
+
+.hb-reviews-page .hb-orbit-two {
+  width: 225px;
+  height: 225px;
+}
+
+.hb-reviews-page .hb-hero-dot {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #b08a55;
+}
+
+.hb-reviews-page .hb-dot-one {
+  top: 20px;
+  right: 35px;
+}
+
+.hb-reviews-page .hb-dot-two {
+  bottom: 22px;
+  left: 20px;
+}
+
+/* IMPROVED FONT SIZES */
+.hb-reviews-page .hb-subtitle,
+.hb-reviews-page .hb-review-text {
+  font-size: 15px;
+}
+
+.hb-reviews-page .hb-stat-label,
+.hb-reviews-page .hb-filter,
+.hb-reviews-page .hb-search,
+.hb-reviews-page .hb-review-meta,
+.hb-reviews-page .hb-status,
+.hb-reviews-page .hb-side-desc,
+.hb-reviews-page .hb-eligible-name,
+.hb-reviews-page .hb-eligible-order,
+.hb-reviews-page .hb-small-btn,
+.hb-reviews-page .hb-form-label {
+  font-size: 13px;
+}
+
+.hb-reviews-page .hb-food-name {
+  font-size: 17px;
+}
+
+.hb-reviews-page .hb-side-title {
+  font-size: 16px;
+}
+
+.hb-reviews-page .hb-input,
+.hb-reviews-page .hb-select,
+.hb-reviews-page .hb-textarea {
+  font-size: 14px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .hb-reviews-page .hb-hero {
+    padding: 30px;
+  }
+
+  .hb-reviews-page .hb-hero-decoration {
+    transform: scale(.85);
+  }
+}
+
+@media (max-width: 650px) {
+  .hb-reviews-page {
+    padding: 10px 12px 35px;
+  }
+
+  .hb-reviews-page .hb-hero {
+    padding: 27px 22px;
+    min-height: auto;
+  }
+
+  .hb-reviews-page .hb-hero-decoration {
+    display: none;
+  }
+
+  .hb-reviews-page .hb-hero h1 {
+    font-size: 30px;
+  }
+
+  .hb-reviews-page .hb-hero-content > p {
+    font-size: 14px;
+  }
+}

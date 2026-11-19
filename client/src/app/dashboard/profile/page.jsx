@@ -93,10 +93,23 @@ const profileImageUrl = user?.profile_image
       throw new Error(data.message || "Image upload failed.");
     }
 
-    setUser((prev) => ({
-      ...prev,
-      profile_image: data.profile_image,
-    }));
+  const updatedUser = {
+  ...user,
+  profile_image: data.profile_image,
+};
+
+setUser(updatedUser);
+
+localStorage.setItem(
+  "homebite-user",
+  JSON.stringify(updatedUser)
+);
+
+window.dispatchEvent(
+  new CustomEvent("homebite-profile-updated", {
+    detail: updatedUser,
+  })
+);
 
     showToast("Profile picture updated successfully!");
   } catch (error) {
@@ -151,7 +164,19 @@ const profileImageUrl = user?.profile_image
         throw new Error(data.message || "Failed to load profile.");
       }
 
-      setUser(data.user);
+     setUser(data.user);
+
+localStorage.setItem(
+  "homebite-user",
+  JSON.stringify(data.user)
+);
+
+window.dispatchEvent(
+  new CustomEvent("homebite-profile-updated", {
+    detail: data.user,
+  })
+);
+
       setFormData({
         name: data.user.name || "",
         phone: data.user.phone || "",

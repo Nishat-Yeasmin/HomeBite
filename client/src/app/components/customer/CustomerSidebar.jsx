@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   FiHome,
@@ -16,6 +17,10 @@ import {
   FiHelpCircle,
   FiChevronRight,
 } from "react-icons/fi";
+
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/$/, "");
+
 
 export default function CustomerSidebar({ isOpen, onClose, user }) {
   const pathname = usePathname();
@@ -40,9 +45,40 @@ export default function CustomerSidebar({ isOpen, onClose, user }) {
     },
   ];
 
-  const firstLetter = (user?.name || user?.email || "U")
-    .charAt(0)
-    .toUpperCase();
+
+  
+const [currentUser, setCurrentUser] = useState(user);
+
+const profileImage = currentUser?.profile_image
+  ? currentUser.profile_image.startsWith("http")
+    ? currentUser.profile_image
+    : `${API_URL}${currentUser.profile_image}`
+  : "";
+
+useEffect(() => {
+  setCurrentUser(user);
+}, [user]);
+
+useEffect(() => {
+  const handleProfileUpdate = (event) => {
+    const updatedUser = event.detail;
+
+    if (updatedUser) {
+      setCurrentUser(updatedUser);
+      
+    }
+  };
+
+  window.addEventListener("homebite-profile-updated", handleProfileUpdate);
+
+  return () => {
+    window.removeEventListener("homebite-profile-updated", handleProfileUpdate);
+  };
+}, []);
+
+const firstLetter = (currentUser?.name || currentUser?.email || "U")
+  .charAt(0)
+  .toUpperCase();
 
   function handleLogout() {
     localStorage.removeItem("homebite-token");
@@ -52,6 +88,8 @@ export default function CustomerSidebar({ isOpen, onClose, user }) {
     window.location.href = "/login";
   }
 
+
+  
   return (
     <>
       {isOpen && (
@@ -90,16 +128,23 @@ export default function CustomerSidebar({ isOpen, onClose, user }) {
           </div>
 
           <div className="flex items-center gap-3 rounded-2xl border border-[#c49b62]/20 bg-[#382017] p-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#c49b62]/50 bg-[#c49b62] font-serif text-lg font-bold text-[#24110c]">
-              {firstLetter}
-            </div>
-
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[#c49b62]/60 bg-[#c49b62] font-serif text-lg font-bold text-[#24110c]">
+  {profileImage ? (
+    <img
+      src={profileImage}
+      alt="Customer profile"
+      className="h-full w-full rounded-full object-cover"
+    />
+  ) : (
+    firstLetter
+  )}
+</div>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-white">
-                {user?.name || "HomeBite Customer"}
+                {currentUser?.name || "HomeBite Customer"}
               </p>
               <p className="truncate text-[11px] text-[#c5a994]">
-                {user?.email || "Welcome to HomeBite"}
+                {currentUser?.email || "Welcome to HomeBite"}
               </p>
             </div>
           </div>
