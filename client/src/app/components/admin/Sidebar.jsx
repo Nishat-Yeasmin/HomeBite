@@ -18,6 +18,7 @@ import {
   FiLogOut,
   FiX,
   FiChevronRight,
+    FiMessageSquare,
 } from "react-icons/fi";
 
 const mainLinks = [
@@ -31,6 +32,7 @@ const managementLinks = [
   { label: "Customers", href: "/admin/customers", icon: FiUsers },
   { label: "Payments", href: "/admin/payments", icon: FiCreditCard },
   { label: "Reviews", href: "/admin/reviews", icon: FiStar },
+  { label: "Contact Messages", href: "/admin/messages", icon: FiMessageSquare },
   { label: "Coupons", href: "/admin/coupons", icon: FiTag },
   { label: "Reports", href: "/admin/reports", icon: FiTrendingUp },
 ];
