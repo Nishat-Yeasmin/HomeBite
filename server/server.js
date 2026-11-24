@@ -19,6 +19,7 @@ const orderRoutes = require("./routes/orderRoutes");
 const wishlistRoutes = require("./routes/wishlistRoutes");
 const customerRoutes = require("./routes/customerRoutes");
 const customerOrderRoutes = require("./routes/customerOrderRoutes");
+const contactRoutes = require("./routes/contactRoutes");
 
 
 const app = express();
@@ -73,6 +74,7 @@ app.use("/api/admin/orders", orderRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/customer", customerRoutes);
 app.use("/api/customer/orders", customerOrderRoutes);
+app.use("/api/contact", contactRoutes);
 
 
 // Start server
@@ -81,5 +83,14 @@ if (require.main === module) {
     console.log(`HomeBite server running on port ${PORT}`);
   });
 }
+
+
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `API route not found: ${req.method} ${req.originalUrl}`,
+  });
+});
+
 
 module.exports = { app, db };
