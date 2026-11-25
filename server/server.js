@@ -20,6 +20,7 @@ const wishlistRoutes = require("./routes/wishlistRoutes");
 const customerRoutes = require("./routes/customerRoutes");
 const customerOrderRoutes = require("./routes/customerOrderRoutes");
 const contactRoutes = require("./routes/contactRoutes");
+const offerRoutes = require("./routes/offerRoutes");
 
 
 const app = express();
@@ -75,7 +76,7 @@ app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/customer", customerRoutes);
 app.use("/api/customer/orders", customerOrderRoutes);
 app.use("/api/contact", contactRoutes);
-
+app.use("/api/offers", offerRoutes);
 
 // Start server
 if (require.main === module) {

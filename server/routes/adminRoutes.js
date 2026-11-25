@@ -271,4 +271,221 @@ HomeBite Support Team`,
 });
 
 
+// ===============================
+// ADMIN OFFER MANAGEMENT
+// ===============================
+
+// GET all offers (Active + Inactive)
+router.get("/offers", async (req, res) => {
+  try {
+    const [offers] = await db.query(`
+      SELECT
+        o.id,
+        o.food_id,
+        f.name AS food_name,
+        f.image_url,
+        f.price AS original_price,
+        o.discount_price,
+        ROUND(
+          ((f.price - o.discount_price) / f.price) * 100
+        ) AS discount_percentage,
+        o.start_date,
+        o.end_date,
+        o.is_active,
+        o.created_at
+      FROM offers o
+      JOIN foods f ON o.food_id = f.id
+      ORDER BY o.created_at DESC
+    `);
+
+    res.json(offers);
+  } catch (error) {
+    console.error("Get offers error:", error);
+    res.status(500).json({ message: "Failed to fetch offers" });
+  }
+});
+
+
+// ADD new offer
+router.post("/offers", async (req, res) => {
+  try {
+    const { food_id, discount_price, start_date, end_date } = req.body;
+
+    if (!food_id || discount_price === undefined || discount_price === "") {
+      return res.status(400).json({
+        message: "Food and discount price are required",
+      });
+    }
+
+    const [foods] = await db.query(
+      "SELECT id, price FROM foods WHERE id = ? AND is_available = 1",
+      [food_id]
+    );
+
+    if (foods.length === 0) {
+      return res.status(404).json({ message: "Food not found or unavailable" });
+    }
+
+    const discountPrice = Number(discount_price);
+    const originalPrice = Number(foods[0].price);
+
+    if (!Number.isFinite(discountPrice) || discountPrice <= 0) {
+      return res.status(400).json({
+        message: "Please enter a valid discount price",
+      });
+    }
+
+    if (discountPrice >= originalPrice) {
+      return res.status(400).json({
+        message: "Discount price must be lower than original price",
+      });
+    }
+
+    const [existing] = await db.query(
+      "SELECT id FROM offers WHERE food_id = ?",
+      [food_id]
+    );
+
+    if (existing.length > 0) {
+      return res.status(409).json({
+        message: "This food already has an offer. Please edit the existing offer.",
+      });
+    }
+
+    const [result] = await db.query(
+      `INSERT INTO offers
+       (food_id, discount_price, start_date, end_date, is_active)
+       VALUES (?, ?, ?, ?, 1)`,
+      [
+        food_id,
+        discountPrice,
+        start_date || new Date(),
+        end_date || null,
+      ]
+    );
+
+    res.status(201).json({
+      message: "Offer added successfully",
+      offerId: result.insertId,
+    });
+  } catch (error) {
+    console.error("Add offer error:", error);
+    res.status(500).json({ message: "Failed to add offer" });
+  }
+});
+
+
+// UPDATE offer
+router.put("/offers/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { discount_price, start_date, end_date } = req.body;
+
+    if (discount_price === undefined || discount_price === "") {
+      return res.status(400).json({
+        message: "Discount price is required",
+      });
+    }
+
+    const [offers] = await db.query(
+      `SELECT o.id, o.food_id, f.price
+       FROM offers o
+       JOIN foods f ON o.food_id = f.id
+       WHERE o.id = ?`,
+      [id]
+    );
+
+    if (offers.length === 0) {
+      return res.status(404).json({ message: "Offer not found" });
+    }
+
+    const discountPrice = Number(discount_price);
+    const originalPrice = Number(offers[0].price);
+
+    if (
+      !Number.isFinite(discountPrice) ||
+      discountPrice <= 0 ||
+      discountPrice >= originalPrice
+    ) {
+      return res.status(400).json({
+        message: "Discount price must be positive and lower than original price",
+      });
+    }
+
+    await db.query(
+      `UPDATE offers
+       SET discount_price = ?,
+           start_date = ?,
+           end_date = ?
+       WHERE id = ?`,
+      [
+        discountPrice,
+        start_date || new Date(),
+        end_date || null,
+        id,
+      ]
+    );
+
+    res.json({ message: "Offer updated successfully" });
+  } catch (error) {
+    console.error("Update offer error:", error);
+    res.status(500).json({ message: "Failed to update offer" });
+  }
+});
+
+
+// ACTIVATE / DEACTIVATE offer
+router.patch("/offers/:id/status", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { is_active } = req.body;
+
+    if (is_active !== 0 && is_active !== 1 &&
+        is_active !== true && is_active !== false) {
+      return res.status(400).json({
+        message: "Valid offer status is required",
+      });
+    }
+
+    const [result] = await db.query(
+      "UPDATE offers SET is_active = ? WHERE id = ?",
+      [is_active ? 1 : 0, id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Offer not found" });
+    }
+
+    res.json({
+      message: "Offer status updated successfully",
+    });
+  } catch (error) {
+    console.error("Update offer status error:", error);
+    res.status(500).json({ message: "Failed to update offer status" });
+  }
+});
+
+
+// DELETE offer
+router.delete("/offers/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [result] = await db.query(
+      "DELETE FROM offers WHERE id = ?",
+      [id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Offer not found" });
+    }
+
+    res.json({ message: "Offer deleted successfully" });
+  } catch (error) {
+    console.error("Delete offer error:", error);
+    res.status(500).json({ message: "Failed to delete offer" });
+  }
+});
+
+
 module.exports = router;
