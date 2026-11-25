@@ -24,6 +24,7 @@ import {
 const mainLinks = [
   { label: "Dashboard", href: "/admin", icon: FiHome },
   { label: "Foods", href: "/admin/foods", icon: FiCoffee },
+    { label: "Offers", href: "/admin/offers", icon: FiTag },
   { label: "Categories", href: "/admin/categories", icon: FiPackage },
   { label: "Orders", href: "/admin/orders", icon: FiShoppingCart, badge: "New" },
 ];

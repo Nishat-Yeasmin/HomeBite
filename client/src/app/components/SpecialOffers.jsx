@@ -36,7 +36,7 @@ const offers = [
     price: "৳60",
     discount: "25% OFF",
     image:
-      "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=85",
+      "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D",
   },
   {
     id: 4,

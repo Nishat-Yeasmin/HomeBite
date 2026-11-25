@@ -3,81 +3,78 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+
+import { useRouter } from "next/navigation";
+
 import { FiArrowUpRight } from "react-icons/fi";
 
-const categories = [
-  {
-    id: 1,
-    title: "Cake & Bakery",
-    count: "18 Items",
-    image:
-      "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=900&q=85",
-  },
-  {
-    id: 2,
-    title: "Pitha",
-    count: "14 Items",
-    image:
-      "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=85",
-  },
-  {
-    id: 3,
-    title: "Biriyani & Rice",
-    count: "24 Items",
-    image:
-      "https://images.unsplash.com/photo-1589302168068-964664d93dc0?auto=format&fit=crop&w=900&q=85",
-  },
-  {
-    id: 4,
-    title: "Fast Food",
-    count: "32 Items",
-    image:
-      "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=85",
-  },
-  {
-    id: 5,
-    title: "Snacks",
-    count: "21 Items",
-    image:
-      "https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?auto=format&fit=crop&w=900&q=85",
-  },
-  {
-    id: 6,
-    title: "Desserts",
-    count: "15 Items",
-    image:
-      "https://images.unsplash.com/photo-1551024506-0bccd828d307?auto=format&fit=crop&w=900&q=85",
-  },
-  {
-    id: 7,
-    title: "Homemade Drinks",
-    count: "12 Items",
-    image:
-      "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=900&q=85",
-  },
-  {
-    id: 8,
-    title: "Pickles & Chutney",
-    count: "16 Items",
-    image:
-      "https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=900&q=85",
-  },
-];
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+).replace(/\/$/, "");
+
+const fallbackImages = {
+  1: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=900&q=85",
+  2: "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=85",
+  3: "https://images.unsplash.com/photo-1589302168068-964664d93dc0?auto=format&fit=crop&w=900&q=85",
+  4: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=85",
+  5: "https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?auto=format&fit=crop&w=900&q=85",
+  6: "https://images.unsplash.com/photo-1551024506-0bccd828d307?auto=format&fit=crop&w=900&q=85",
+  7: "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=900&q=85",
+  8: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=900&q=85",
+};
+
 
 export default function CategorySection() {
-  const [activeIndex, setActiveIndex] = useState(2);
-  const [isPaused, setIsPaused] = useState(false);
+  const [categories, setCategories] = useState([]);
+const [activeIndex, setActiveIndex] = useState(2);
+const [isPaused, setIsPaused] = useState(false);
+
+const router = useRouter();
+// Fetch categories from backend
+useEffect(() => {
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/categories`);
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Failed to load categories");
+      }
+
+      const formattedCategories = (data.categories || []).map((category) => ({
+        id: category.id,
+        title: category.name,
+        count: `${category.food_count || 0} Items`,
+        image:
+          category.image_url ||
+          fallbackImages[category.id] ||
+          fallbackImages[1],
+      }));
+
+      setCategories(formattedCategories);
+      setActiveIndex(
+        formattedCategories.length > 2 ? 2 : 0
+      );
+    } catch (error) {
+      console.error("Category loading error:", error);
+    }
+  };
+
+  fetchCategories();
+}, []);
+
 
   // Auto change every 2 seconds
-  useEffect(() => {
-    if (isPaused) return;
 
-    const interval = setInterval(() => {
-      setActiveIndex((current) => (current + 1) % categories.length);
-    }, 5000);
+useEffect(() => {
+  if (isPaused || categories.length === 0) return;
 
-    return () => clearInterval(interval);
-  }, [isPaused]);
+  const interval = setInterval(() => {
+    setActiveIndex((current) => (current + 1) % categories.length);
+  }, 2000);
+
+  return () => clearInterval(interval);
+}, [isPaused, categories.length]);
 
   /*
     Get the position of each card relative to
@@ -159,6 +156,8 @@ export default function CategorySection() {
           </Link>
         </div>
 
+{categories.length > 0 && (
+  <>
         {/* CAROUSEL */}
         <div
           className="relative z-20 mx-auto mt-14 h-[410px] w-full max-w-[1400px] overflow-hidden sm:mt-16 sm:h-[450px]"
@@ -254,7 +253,7 @@ export default function CategorySection() {
                 <article
                   key={category.id}
                   onClick={() => setActiveIndex(index)}
-                  className={`absolute top-1/2 h-[350px] w-[245px] cursor-pointer overflow-hidden rounded-[24px] border border-[#CF9D8F]/30 bg-[#FFFDFC] shadow-[0_18px_45px_rgba(44,14,5,0.16)] transition-all duration-700 ease-[cubic-bezier(0.25,0.8,0.25,1)] sm:h-[380px] sm:w-[275px] ${positionClass}`}
+                  className={`absolute top-1/2 h-[350px] w-[245px] cursor-pointer overflow-hidden rounded-[24px] border border-[#CF9D8F]/30 bg-[#FFFDFC] shadow-[0_18px_45px_rgba(44,14,5,0.16)] transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] sm:h-[380px] sm:w-[275px] ${positionClass}`}
                   style={{
                     transform: `${positionClass.includes("-translate-x-1/2") ? "" : ""} scale(${scale})`,
                     filter: blur,
@@ -291,10 +290,16 @@ export default function CategorySection() {
                     <button
                       type="button"
                       aria-label={`View ${category.title}`}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setActiveIndex(index);
-                      }}
+                     onClick={(event) => {
+  event.stopPropagation();
+
+  const slug = category.title
+    .toLowerCase()
+    .replace(/ & /g, "-")
+    .replace(/ /g, "-");
+
+  router.push(`/menu/${slug}`);
+}}
                       className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-white/40 bg-white/15 text-white shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-[#CF9D8F] hover:text-[#2C0E05] active:scale-95"
                     >
                       <FiArrowUpRight size={20} strokeWidth={2.5} />
@@ -327,6 +332,9 @@ export default function CategorySection() {
             />
           ))}
         </div>
+
+          </>
+)}
 
         {/* BOTTOM TEXT */}
         <p className="relative z-30 mt-5 text-center text-xs font-medium tracking-wide text-[#6B4A40]/70">

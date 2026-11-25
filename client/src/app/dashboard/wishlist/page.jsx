@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { addToCart } from "../../../lib/cart";
 import Link from "next/link";
 import {
   FiHeart,
@@ -38,6 +39,10 @@ export default function WishlistPage() {
 
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+
+
+  const [currentPage, setCurrentPage] = useState(1);
+const ITEMS_PER_PAGE = 6;
 
   const [removeId, setRemoveId] = useState(null);
   const [removing, setRemoving] = useState(false);
@@ -121,6 +126,19 @@ export default function WishlistPage() {
       return matchesSearch && matchesCategory;
     });
   }, [wishlist, search, selectedCategory]);
+
+  // Pagination
+const totalPages = Math.ceil(filteredWishlist.length / ITEMS_PER_PAGE);
+
+const paginatedWishlist = filteredWishlist.slice(
+  (currentPage - 1) * ITEMS_PER_PAGE,
+  currentPage * ITEMS_PER_PAGE
+);
+
+useEffect(() => {
+  setCurrentPage(1);
+}, [search, selectedCategory, wishlist.length]);
+
 
   // Remove wishlist item
   async function removeWishlistItem() {
@@ -391,14 +409,13 @@ export default function WishlistPage() {
           </p>
 
           {wishlist.length === 0 ? (
-            <Link
-              href="/menu"
-              className="mt-7 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#49283f] px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#49283f]/15 transition hover:-translate-y-1 hover:bg-[#603b55]"
-            >
-              <FiShoppingBag />
-              Explore Menu
-              <FiArrowUpRight />
-            </Link>
+        <Link
+  href="/menu"
+  className="mt-7 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#49283f] px-6 py-3 text-sm font-semibold text-white transition hover:-translate-y-1 hover:bg-[#603b55]"
+>
+  Explore Menu
+  <FiArrowUpRight />
+</Link>
           ) : (
             <button
               onClick={() => {
@@ -417,7 +434,7 @@ export default function WishlistPage() {
           className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3"
         >
           <AnimatePresence mode="popLayout">
-            {filteredWishlist.map((item, index) => {
+            {paginatedWishlist.map((item, index) => {
               const isAvailable =
                 item.is_available === 1 ||
                 item.is_available === true ||
@@ -529,24 +546,28 @@ export default function WishlistPage() {
                       </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="mt-5 grid grid-cols-[1fr_auto] gap-2">
-                      <Link
-                        href="/menu"
-                        className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#49283f] px-4 py-3 text-xs font-bold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-[#603b55] hover:shadow-lg"
-                      >
-                        Explore Menu
-                        <FiArrowUpRight />
-                      </Link>
+            {/* Actions */}
+<div className="mt-5 flex justify-center">
+  <button
+    type="button"
+    disabled={!isAvailable}
+    onClick={() => {
+      addToCart({
+        id: item.food_id,
+        name: item.name,
+        price: Number(item.price),
+        image: item.image_url || "",
+        category: item.category_name || "Homemade Food",
+      });
 
-                      <button
-                        onClick={() => setRemoveId(item.food_id)}
-                        aria-label="Remove from wishlist"
-                        className="flex h-11 w-12 cursor-pointer items-center justify-center rounded-xl border border-[#eadde5] text-[#a16d89] transition duration-300 hover:-translate-y-0.5 hover:border-red-200 hover:bg-red-50 hover:text-red-500"
-                      >
-                        <FiTrash2 />
-                      </button>
-                    </div>
+      showToast(`${item.name} added to cart`);
+    }}
+    className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#49283f] px-4 py-3 text-xs font-bold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-[#603b55] hover:shadow-lg disabled:cursor-not-allowed disabled:bg-gray-400"
+  >
+    <FiShoppingBag />
+    {isAvailable ? "Add to Cart" : "Unavailable"}
+  </button>
+</div>
                   </div>
                 </motion.article>
               );
@@ -554,6 +575,58 @@ export default function WishlistPage() {
           </AnimatePresence>
         </motion.div>
       )}
+
+
+
+{/* Pagination */}
+{totalPages > 1 && (
+  <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
+    <button
+      type="button"
+      disabled={currentPage === 1}
+      onClick={() => {
+        setCurrentPage((prev) => Math.max(1, prev - 1));
+        window.scrollTo({ top: 450, behavior: "smooth" });
+      }}
+      className="cursor-pointer rounded-xl border border-[#eadde5] bg-white px-4 py-2.5 text-sm font-semibold text-[#70405d] transition hover:bg-[#f5eaf1] disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      Previous
+    </button>
+
+    {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+      (page) => (
+        <button
+          key={page}
+          type="button"
+          onClick={() => {
+            setCurrentPage(page);
+            window.scrollTo({ top: 450, behavior: "smooth" });
+          }}
+          className={`h-10 min-w-10 cursor-pointer rounded-xl px-3 text-sm font-bold transition ${
+            currentPage === page
+              ? "bg-[#49283f] text-white shadow-md"
+              : "border border-[#eadde5] bg-white text-[#70405d] hover:bg-[#f5eaf1]"
+          }`}
+        >
+          {page}
+        </button>
+      )
+    )}
+
+    <button
+      type="button"
+      disabled={currentPage === totalPages}
+      onClick={() => {
+        setCurrentPage((prev) => Math.min(totalPages, prev + 1));
+        window.scrollTo({ top: 450, behavior: "smooth" });
+      }}
+      className="cursor-pointer rounded-xl border border-[#eadde5] bg-white px-4 py-2.5 text-sm font-semibold text-[#70405d] transition hover:bg-[#f5eaf1] disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      Next
+    </button>
+  </div>
+)}
+
 
       {/* Bottom note */}
       {wishlist.length > 0 && (
